@@ -18,9 +18,6 @@ jobs:
           gpg-private-key: '${{ secrets.GPG_PRIVATE_KEY }}'
           gpg-passphrase: GPG_PASSPHRASE
 
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
-
       - name: Publish to Apache Maven Central
         run: mvn deploy
         env:
