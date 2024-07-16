@@ -15,7 +15,7 @@ jobs:
           server-id: osshr
           server-username: OSSHR_USERNAME
           server-password: OSSHR_TOKEN
-          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-private-key: '${{ secrets.GPG_PRIVATE_KEY }}'
           gpg-passphrase: GPG_PASSPHRASE
 
       - name: Build with Maven
@@ -24,6 +24,6 @@ jobs:
       - name: Publish to Apache Maven Central
         run: mvn deploy
         env:
-          OSSHR_USERNAME: ${{ secrets.OSSHR_USERNAME }}
-          OSSHR_TOKEN: ${{ secrets.OSSHR_TOKEN }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          OSSHR_USERNAME: '${{ secrets.OSSHR_USERNAME }}'
+          OSSHR_TOKEN: '${{ secrets.OSSHR_TOKEN }}'
+          GPG_PASSPHRASE: '${{ secrets.GPG_PASSPHRASE }}'
