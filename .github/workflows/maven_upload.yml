@@ -10,13 +10,16 @@ jobs:
       - name: Set up Apache Maven Central
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
+          distribution: 'corretto'
           java-version: '11'
           server-id: osshr
           server-username: ${{ secrets.OSSHR_USERNAME }}
           server-password: ${{ secrets.OSSHR_TOKEN }}
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Debug Info
+        run: cat settings.xml
 
       - name: Publish to Apache Maven Central
         run: mvn deploy
