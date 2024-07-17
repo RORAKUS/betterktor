@@ -22,6 +22,20 @@
         </developer>
     </developers>
 
+    <licenses>
+        <license>
+            <name>GNU General Public License v3.0</name>
+            <url>https://opensource.org/license/gpl-3-0</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <scm>
+        <connection>scm:git:https://github.com/RORAKUS/betterktor.git</connection>
+        <developerConnection>scm:git:https://github.com/RORAKUS/betterktor.git</developerConnection>
+        <url>https://github.com/RORAKUS/betterktor</url>
+    </scm>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kotlin.code.style>official</kotlin.code.style>
