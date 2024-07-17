@@ -18,11 +18,8 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PASSPHRASE
 
-      - name: Debug Info
-        run: cat /home/runner/.m2/settings.xml
-
       - name: Publish to Apache Maven Central
-        run: echo $OSSHR_USERNAME && echo $OSSHR_TOKEN && echo GPG_PASSPHRASE && mvn deploy
+        run: mvn deploy
         env:
           OSSHR_USERNAME: ${{ secrets.OSSHR_USERNAME }}
           OSSHR_TOKEN: ${{ secrets.OSSHR_TOKEN }}
