@@ -12,7 +12,7 @@ jobs:
         with:
           distribution: 'corretto'
           java-version: '11'
-          server-id: osshr
+          server-id: central
           server-username: OSSHR_USERNAME
           server-password: OSSHR_TOKEN
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
