@@ -7,7 +7,7 @@
 
     <groupId>codes.rorak</groupId>
     <artifactId>betterktor</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <description>A very simple and easy-to-use Ktor folder routing plugin.</description>
     <name>Better Ktor</name>
     <url>https://github.com/RORAKUS/betterktor</url>
@@ -174,6 +174,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-test-host-jvm</artifactId>
+            <version>${ktor-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
             <artifactId>kotlin-stdlib</artifactId>
             <version>2.0.0</version>
@@ -184,9 +190,24 @@
             <version>${ktor-version}</version>
         </dependency>
         <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-status-pages-jvm</artifactId>
+            <version>${ktor-version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-server-websockets-jvm</artifactId>
+            <version>${ktor-version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>0.10.2</version>
+        </dependency>
+        <dependency>
+            <groupId>io.ktor</groupId>
+            <artifactId>ktor-serialization-kotlinx-json-jvm</artifactId>
+            <version>${ktor-version}</version>
         </dependency>
     </dependencies>
 </project>

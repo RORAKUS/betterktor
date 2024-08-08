@@ -159,6 +159,47 @@ internal class BKSimpleTest {
 		assertEquals(200, response2.statusCode);
 		assertEquals("Number Delete 54", response2.text);
 	}
+	
+	@Test
+	fun `Named Route Methods`() {
+		val response = khttp.get("http://localhost:8080/user/new-user");
+		assertEquals(200, response.statusCode);
+		assertEquals("New user", response.text);
+		
+		val response2 = khttp.post("http://localhost:8080/user/update-user");
+		assertEquals(200, response2.statusCode);
+		assertEquals("Updated user", response2.text);
+		
+		val response3 = khttp.delete("http://localhost:8080/user/delete-user");
+		assertEquals(200, response3.statusCode);
+		assertEquals("User deleted", response3.text);
+	}
+	
+	@Test
+	fun `Absolute Named Routes`() {
+		val response = khttp.post("http://localhost:8080/completely/different/path/test");
+		assertEquals(200, response.statusCode);
+		assertEquals("Works!", response.text);
+	}
+	
+	@Test
+	fun `Error Handler`() {
+		val response = khttp.post("http://localhost:8080/user/when/not/done");
+		assertEquals(200, response.statusCode);
+		assertEquals("Error caught in user!", response.text);
+		
+		val response2 = khttp.get("http://localhost:8080/number/numb");
+		assertEquals(200, response2.statusCode);
+		assertEquals("Error caught in number", response2.text);
+		
+		val response3 = khttp.post("http://localhost:8080/completely/different/path/amogus");
+		assertEquals(200, response3.statusCode);
+		assertEquals("Error caught in /!", response3.text);
+		
+		val response4 = khttp.put("http://localhost:8080/test");
+		assertEquals(200, response4.statusCode);
+		assertEquals("Error caught in /test!", response4.text);
+	}
 }
 
 fun Application.mainModule() {

@@ -1,4 +1,4 @@
-package codes.rorak.betterktor
+package codes.rorak.betterktor.annotations
 
 /**
  * An annotation that can be used on `BKRoute`. Specifies a custom path for the route.
@@ -8,4 +8,4 @@ package codes.rorak.betterktor
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class BKPath(val path: String = "", val regex: String = "");
+annotation class BKPath(val path: String = "");

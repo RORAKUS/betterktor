@@ -1,17 +1,17 @@
 package codes.rorak.betterktor
 
 /**
- * The config class for the `BKPlugin`
+ * The config class for the `codes.rorak.betterktor.getBKPlugin`
  */
 class BKConfig {
 	/**
 	 * The name of the package containing all endpoints.
 	 * Default: "endpoints"
 	 */
-	var packageName = "endpoints";
+	var endpointsPackage = "endpoints";
 	
 	/**
-	 * The name of the base package, in which the `packageName` package is.
+	 * The name of the base package, in which the `endpointsPackage` package is.
 	 * Default: computed using the call stack. It will be the path of the package where is `install()` called from.
 	 * Can be really imprecise, so if BK does not work, try setting this :)
 	 */
@@ -31,4 +31,11 @@ class BKConfig {
 		set(value) {
 			field = value.dropLastWhile { it == '/' };
 		};
+	
+	/**
+	 * Whether to install websockets if needed. Websockets will not work if this is set false, and you don't
+	 * install them yourself!
+	 * Default: true
+	 */
+	var installWebSockets = true;
 }

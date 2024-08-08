@@ -82,7 +82,7 @@ internal class BKOtherTest {
 fun Application.mainModule() {
 	install(BKPlugin) {
 		basePackage = "different.pack";
-		packageName = "api";
+		endpointsPackage = "api";
 		casing = BKTransform::snakeCase;
 		rootPath = "/api";
 	};

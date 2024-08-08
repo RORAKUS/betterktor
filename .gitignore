@@ -9,3 +9,4 @@ target/
 *.ipr
 .idea
 .token
+todo.txt

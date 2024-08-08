@@ -1,6 +1,6 @@
 package simple.endpoints
 
-import codes.rorak.betterktor.BKRoute
+import codes.rorak.betterktor.handlers.BKRoute
 import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
