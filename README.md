@@ -15,7 +15,7 @@ A really simple library allowing **Folder routing** for Ktor.
     * [Regex path](#regex-path)
 9. [Name transforming](#name-transforming)
 10. [Other info](#other-info)
-* [The base package insight](#the-base-package-insight)
+   * [The base package insight](#the-base-package-insight)
 
 ## Quickstart
 
