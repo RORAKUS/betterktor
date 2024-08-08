@@ -90,10 +90,6 @@ internal object BKProcessor {
 			}
 		}
 		
-		for (triple in registered) {
-			println("ERROR ${triple.first} -> ${triple.second.javaMethod?.declaringClass?.canonicalName}#${triple.second.name}")
-		}
-		
 		exception { call: ApplicationCall, cause: Throwable ->
 			var path = call.request.path().removeIfHasAndNotEmpty("/");
 			do {
@@ -139,22 +135,10 @@ internal object BKProcessor {
 		val exec: Route.() -> Unit = { handle { method.callSuspendIgnoreArgs(instance, call, call.request); }; }
 		
 		if (isRegex)
-			route(
-				Regex("$path/?"),
-				methodStr,
-				exec
-			).also { println("${methodStr.value} $path/? -> ${method.javaMethod?.declaringClass?.canonicalName}#${method.name}") };
+			route(Regex("$path/?"), methodStr, exec);
 		else {
-			route(
-				path,
-				methodStr,
-				exec
-			).also { println("${methodStr.value} $path -> ${method.javaMethod?.declaringClass?.canonicalName}#${method.name}") };
-			route(
-				path.withOrWithout("/"),
-				methodStr,
-				exec
-			).also { println("${methodStr.value} ${path.withOrWithout("/")} -> ${method.javaMethod?.declaringClass?.canonicalName}#${method.name}") };
+			route(path, methodStr, exec);
+			route(path.withOrWithout("/"), methodStr, exec);
 		}
 	}
 	
