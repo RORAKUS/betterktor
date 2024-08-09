@@ -1,10 +1,10 @@
 package simple.endpoints.user
 
-import codes.rorak.betterktor.BKHttpMethod
 import codes.rorak.betterktor.annotations.BKDefaultMethod
 import codes.rorak.betterktor.annotations.BKGet
 import codes.rorak.betterktor.annotations.BKMethod
 import codes.rorak.betterktor.handlers.BKRoute
+import codes.rorak.betterktor.util.BKHttpMethod
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 

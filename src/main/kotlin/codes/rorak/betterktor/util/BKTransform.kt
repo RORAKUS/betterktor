@@ -1,4 +1,4 @@
-package codes.rorak.betterktor
+package codes.rorak.betterktor.util
 
 /**
  * An object containing all possible object transformations. You can use extension methods to extend it.

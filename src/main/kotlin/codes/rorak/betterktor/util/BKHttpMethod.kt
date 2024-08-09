@@ -1,4 +1,4 @@
-package codes.rorak.betterktor
+package codes.rorak.betterktor.util
 
 /**
  * All usable HTTP methods

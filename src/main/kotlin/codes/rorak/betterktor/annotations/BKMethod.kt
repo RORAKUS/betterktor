@@ -1,6 +1,6 @@
 package codes.rorak.betterktor.annotations
 
-import codes.rorak.betterktor.BKHttpMethod
+import codes.rorak.betterktor.util.BKHttpMethod
 
 /**
  * Sets a named route method's method to the `method` parameter value

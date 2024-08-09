@@ -1,4 +1,6 @@
-package codes.rorak.betterktor
+package codes.rorak.betterktor.util
+
+import io.ktor.server.auth.*
 
 /**
  * The config class for the `codes.rorak.betterktor.getBKPlugin`
@@ -38,4 +40,12 @@ class BKConfig {
 	 * Default: true
 	 */
 	var installWebSockets = true;
+	
+	/**
+	 * The configuration for the authentication plugin
+	 */
+	fun configureAuthentication(config: AuthenticationConfig.() -> Unit) {
+		authConfig = config; }
+	
+	internal var authConfig: (AuthenticationConfig.() -> Unit)? = null;
 }

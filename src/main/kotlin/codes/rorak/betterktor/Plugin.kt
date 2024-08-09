@@ -5,17 +5,25 @@ import codes.rorak.betterktor.handlers.BKRoute
 import codes.rorak.betterktor.handlers.BKWebsocket
 import codes.rorak.betterktor.internal.BKProcessor
 import codes.rorak.betterktor.internal.BKProcessor.plusNotEmpty
+import codes.rorak.betterktor.util.BKConfig
 import io.ktor.serialization.kotlinx.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.websocket.*
 import kotlinx.serialization.json.Json
 import org.reflections.Reflections
+import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 
 /**
  * The plugin object
  */
 val BKPlugin = createApplicationPlugin("BetterKtor", ::BKConfig) {
 	val config = pluginConfig;
+	val authConfig = config.authConfig
+	
+	// install authentication
+	if (authConfig != null) application.install(Authentication, authConfig);
 	
 	// the package where all endpoints are
 	val endpointPackage = (config.basePackage ?: getBasePackage()).plusNotEmpty(".") + config.endpointsPackage;
@@ -41,4 +49,9 @@ private fun getBasePackage(): String {
 		return it.className.substringBeforeLast(".", "");
 	};
 	return "";
+}
+
+fun KFunction<*>.isIn(col: Collection<KFunction<*>>) = col.any { fn ->
+	name == fn.name && parameters.size == fn.parameters.size
+			&& fn.parameters.map(KParameter::type).drop(1) == parameters.map(KParameter::type).drop(1);
 }

@@ -13,8 +13,10 @@ A really simple library allowing **Folder routing** for Ktor.
 7. [Named method routes](#named-method-routes)
 8. [Custom path](#custom-path)
     * [Regex path](#regex-path)
-9. [Name transforming](#name-transforming)
-10. [Other info](#other-info)
+9. [Authentication](#authentication)
+10. [Multi routes](#multi-routes)
+11. [Name transforming](#name-transforming)
+12. [Other info](#other-info)
 
 ## Quickstart
 
@@ -28,14 +30,14 @@ The minimum version supported is **Java 11**.
 <dependency>
     <groupId>codes.rorak</groupId>
     <artifactId>betterktor</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```kotlin
-implementation("codes.rorak:betterktor:1.1.1");
+implementation("codes.rorak:betterktor:1.1.2");
 ```
 
 To quickly start with BK, just install the plugin in your main Ktor module:
@@ -69,6 +71,9 @@ install(BKPlugin) {
 	casing = BKTransform::kebabCase;
 	rootPath = "/api";
 	installWebSockets = true;
+	configureAuthentication {
+		// ... auth config
+	}
 };
 ```
 
@@ -80,6 +85,8 @@ install(BKPlugin) {
 * **`rootPath`** - base path for HTTP routes for all endpoints
 * **`installWebSockets`** - whether to install websockets inside BKPlugin if they are needed. Set this to _false_ if you
   want to configure them yourself
+* **`configureAuthentication()`** - a method/configuration of the Authentication plugin. You MUST configure it in BK, if
+  you want to use [BK Auth](#authentication)
 
 ## Routes
 
@@ -135,7 +142,8 @@ class User: BKWebsocket {
 ## Error handlers
 
 And the last interface is `BKErrorHandler` and it's the simplest one. You have just one method:
-`onError(call, cause)`. Paths work the same as with [Routes](#routes), but the class name **is not added to the path!**.
+`onError(call, cause)`. Paths work the same as with [Routes](#routes), but the class name **is not added to the path!
+**. (Exception [Multi route](#multi-routes))
 
 Here is an example:
 
@@ -241,6 +249,52 @@ class User: BKRoute {
 Regex path works exactly the same as a [Custom path](#custom-path), but you can use regex.
 The annotation is `@BKRegexPath` (who would have guessed) with one parameter `path`.
 You don't need an example...
+
+## Authentication
+
+BK also supports authentication. Please read [Ktor authentication](https://ktor.io/docs/server-auth.html) first.
+You just use the `@BKAuth(name)` annotation, where name specifies the name of the provider.
+It is possible to apply authentication to a class or a function.
+
+To use authentication routes you **MUST** install the plugin through the [config](#configuration).
+
+## Multi routes
+
+If you want a class to be a multiple of routes (for example a route and a websocket, or a route and an error handler),
+you can use multi routes. Just inherit multiple interfaces and mark the class with the `@BKMulti` annotation.
+Inside the annotation's parameter you can choose what route type will use it's named methods, so for example if you
+specify `@BKMulti(BKRouteType.WEBSOCKETS)`, all named routes will automatically be in websockets. You can override
+this behaviour with `@BKMultiFor(type)` annotation, which you can apply to any named route method.
+
+**Important: Error handler in multi routes WILL include the class name, unlike normal error handler!**
+
+Here is an example:
+
+```kotlin
+@BKMulti // the type is BKRouteType.ROUTE by default
+class User: BKRoute, BKWebsocket, BKErrorHandler {
+	override suspend fun get(call: ApplicationCall) {
+		call.respondText("GET http://ip:port/user");
+	}
+	override suspend fun handle(session: DefaultWebSocketServerSession) {
+		session.send("ws://ip:port/user BUT NOT POST http://ip:port/user/handle");
+		session.close();
+	}
+	override suspend fun onError(call: ApplicationCall, error: Throwable) {
+		call.respondText("Error handler for /user, but NOT ws://ip:port/user/on-error, NOR http://ip:port/user/on-error");
+	}
+	
+	suspend fun new(call: ApplicationCall) {
+		call.respondText("POST http://ip:port/user/new");
+	}
+	
+	@BKMultiFor(BKRouteType.WEBSOCKET)
+	suspend fun chat(session: DefaultWebSocketServerSession) {
+		session.send("ws://ip:port/user/chat");
+		session.close();
+	}
+}
+```
 
 ## Name transforming
 

@@ -1,20 +1,22 @@
 package codes.rorak.betterktor.internal
 
-import codes.rorak.betterktor.BKConfig
 import codes.rorak.betterktor.BKException
-import codes.rorak.betterktor.BKHttpMethod
 import codes.rorak.betterktor.annotations.*
 import codes.rorak.betterktor.handlers.BKErrorHandler
 import codes.rorak.betterktor.handlers.BKRoute
 import codes.rorak.betterktor.handlers.BKWebsocket
+import codes.rorak.betterktor.isIn
+import codes.rorak.betterktor.util.BKConfig
+import codes.rorak.betterktor.util.BKHttpMethod
+import codes.rorak.betterktor.util.BKRouteType
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import kotlin.reflect.KFunction
-import kotlin.reflect.KParameter
 import kotlin.reflect.KType
 import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredFunctions
@@ -29,14 +31,23 @@ internal object BKProcessor {
 			for (routeClass in routes) {
 				val instance = routeClass.create();
 				val path = pathOf(routeClass, config, endpointPackage);
+				var auth = routeClass.getAnnotation(BKAuth::class.java)?.name;
+				
+				val multi = routeClass.getAnnotation(BKMulti::class.java)?.namedRoutesFor;
 				
 				for (method in routeClass.kotlin.declaredFunctions) {
 					if (method.hasAnnotation<BKIgnore>()) continue;
-					checkMethod(method, listOf(typeOf<ApplicationCall>()), listOf(typeOf<ApplicationRequest>()));
+					val check = {
+						checkMethod(method, listOf(typeOf<ApplicationCall>()), listOf(typeOf<ApplicationRequest>()));
+					};
 					
-					if (!method.isIn(BKRoute::class.declaredFunctions))
-						processStandalone(method, path, config, instance);
-					else registerMethod(path, method, isRegex(routeClass), instance);
+					auth = method.findAnnotation<BKAuth>()?.name ?: auth;
+					val namedRoute = isNamedRoute(method, multi, BKRouteType.ROUTE);
+					
+					if (method.isIn(BKRoute::class.declaredFunctions))
+						check().also { registerMethod(path, method, isRegex(routeClass), instance, auth); }
+					else if (namedRoute)
+						check().also { processStandalone(method, path, config, instance, auth); }
 				}
 			}
 		}
@@ -52,16 +63,24 @@ internal object BKProcessor {
 			val instance = routeClass.create();
 			val path = pathOf(routeClass, config, endpointPackage);
 			
+			val multi = routeClass.getAnnotation(BKMulti::class.java)?.namedRoutesFor;
+			
 			for (method in routeClass.kotlin.declaredFunctions) {
 				if (method.hasAnnotation<BKIgnore>()) continue;
-				checkMethod(
-					method,
-					listOf(typeOf<DefaultWebSocketServerSession>()),
-					listOf(typeOf<ApplicationCall>(), typeOf<ApplicationRequest>())
-				);
+				val check = {
+					checkMethod(
+						method,
+						listOf(typeOf<DefaultWebSocketServerSession>()),
+						listOf(typeOf<ApplicationCall>(), typeOf<ApplicationRequest>())
+					)
+				};
 				
-				if (method.isIn(BKWebsocket::class.declaredFunctions)) registerWS(path, method, instance);
-				else registerWS(path.addIfNeeds("/") + config.casing(method.name), method, instance);
+				val namedRoute = isNamedRoute(method, multi, BKRouteType.WEBSOCKET);
+				
+				if (method.isIn(BKWebsocket::class.declaredFunctions))
+					check().also { registerWS(path, method, instance); };
+				else if (namedRoute)
+					check().also { registerWS(path.addIfNeeds("/") + config.casing(method.name), method, instance); };
 			}
 		}
 	}
@@ -72,21 +91,28 @@ internal object BKProcessor {
 		routes: Set<Class<out BKErrorHandler>>,
 		endpointPackage: String
 	) = app.install(StatusPages) {
-		val registered = mutableListOf<Triple<String, KFunction<*>, Any>>();
+		val registered = mutableListOf<Triple<String, KFunction<*>, Any>?>();
 		
 		for (routeClass in routes) {
-			val path = pathOf(routeClass, config, endpointPackage, false);
+			val multi = routeClass.getAnnotation(BKMulti::class.java)?.namedRoutesFor;
+			
+			val path = pathOf(routeClass, config, endpointPackage, multi != null);
 			val instance = routeClass.create();
+			
 			
 			for (method in routeClass.kotlin.declaredFunctions) {
 				if (method.hasAnnotation<BKIgnore>()) continue;
-				checkMethod(method, listOf(typeOf<ApplicationCall>(), typeOf<Throwable>()), listOf());
+				val check =
+					{ checkMethod(method, listOf(typeOf<ApplicationCall>(), typeOf<Throwable>()), listOf()); }
+				
+				val namedRoute = isNamedRoute(method, multi, BKRouteType.ERROR_HANDLER);
 				
 				registered +=
 					if (method.isIn(BKErrorHandler::class.declaredFunctions))
-						Triple(path.removeIfHasAndNotEmpty("/"), method, instance);
-					else
-						Triple(path.addIfNeeds("/") + config.casing(method.name), method, instance);
+						Triple(path.removeIfHasAndNotEmpty("/"), method, instance).also { check() };
+					else if (namedRoute)
+						Triple(path.addIfNeeds("/") + config.casing(method.name), method, instance).also { check() };
+					else null
 			}
 		}
 		
@@ -95,7 +121,7 @@ internal object BKProcessor {
 			do {
 				path = path.ifEmpty { "/" };
 				
-				val handlers = registered
+				val handlers = registered.filterNotNull()
 					.filter { path == it.first };
 				
 				if (handlers.isNotEmpty()) {
@@ -109,7 +135,13 @@ internal object BKProcessor {
 		};
 	}
 	
-	private fun Routing.processStandalone(method: KFunction<*>, prefixPath: String, config: BKConfig, instance: Any) {
+	private fun Routing.processStandalone(
+		method: KFunction<*>,
+		prefixPath: String,
+		config: BKConfig,
+		instance: Any,
+		auth: String?
+	) {
 		val declaringClass = method.javaMethod?.declaringClass!!;
 		val httpMethod = with(method) {
 			if (hasAnnotation<BKGet>()) return@with BKHttpMethod.GET;
@@ -121,7 +153,7 @@ internal object BKProcessor {
 		};
 		val path = prefixPath.addIfNeeds("/") + config.casing(method.name);
 		
-		registerMethod(path, method, isRegex(declaringClass), instance, httpMethod.name);
+		registerMethod(path, method, isRegex(declaringClass), instance, auth, httpMethod.name);
 	}
 	
 	private fun Routing.registerMethod(
@@ -129,17 +161,23 @@ internal object BKProcessor {
 		method: KFunction<*>,
 		isRegex: Boolean,
 		instance: Any,
+		auth: String?,
 		httpMethod: String = method.name
 	) {
 		val methodStr = HttpMethod.parse(httpMethod.uppercase());
 		val exec: Route.() -> Unit = { handle { method.callSuspendIgnoreArgs(instance, call, call.request); }; }
 		
-		if (isRegex)
-			route(Regex("$path/?"), methodStr, exec);
-		else {
-			route(path, methodStr, exec);
-			route(path.withOrWithout("/"), methodStr, exec);
-		}
+		val register: Route.() -> Unit = {
+			if (isRegex)
+				route(Regex("$path/?"), methodStr, exec);
+			else {
+				route(path, methodStr, exec);
+				route(path.withOrWithout("/"), methodStr, exec);
+			}
+		};
+		
+		if (auth != null) authenticate(configurations = arrayOf(auth), build = register);
+		else register();
 	}
 	
 	private fun Routing.registerWS(
@@ -193,13 +231,18 @@ internal object BKProcessor {
 		) throw IllegalStateException("Route method has more parameters then it should!");
 	}
 	
+	private fun isNamedRoute(
+		method: KFunction<*>,
+		multi: BKRouteType?,
+		route: BKRouteType
+	): Boolean {
+		val methodMulti = method.findAnnotation<BKMultiFor>()?.value;
+		return route.restDoesNotContain(method)
+				&& (multi == null || methodMulti == route || (multi == route && methodMulti == null));
+	}
+	
 	private fun isRegex(clazz: Class<*>): Boolean = clazz.isAnnotationPresent(BKRegexPath::class.java);
 	
 	private suspend fun KFunction<*>.callSuspendIgnoreArgs(vararg args: Any) =
 		callSuspend(*args.copyOfRange(0, parameters.size));
-	
-	private fun KFunction<*>.isIn(col: Collection<KFunction<*>>) = col.any { fn ->
-		name == fn.name && parameters.size == fn.parameters.size
-				&& fn.parameters.map(KParameter::type).drop(1) == parameters.map(KParameter::type).drop(1);
-	}
 }
