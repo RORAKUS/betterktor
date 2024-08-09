@@ -109,15 +109,22 @@ internal class BKOtherTest {
 	
 	@Test
 	fun Auth() {
-		val response = khttp.get(
-			"http://localhost:8090/api/auth/",
-			auth = BasicAuthorization(TOKEN, TOKEN)
-		);
+		val auth = BasicAuthorization(TOKEN, TOKEN)
+		
+		val response = khttp.get("http://localhost:8090/api/auth/", auth = auth);
 		assertEquals(200, response.statusCode);
 		assertEquals("auth", response.text);
 		
 		val response2 = khttp.get("http://localhost:8090/api/auth");
 		assertEquals(401, response2.statusCode);
+		
+		val response3 = khttp.get("http://localhost:8090/api/auth/one", auth = auth);
+		assertEquals(200, response3.statusCode);
+		assertEquals("auth", response3.text);
+		
+		val response4 = khttp.get("http://localhost:8090/api/auth/one");
+		assertEquals(200, response4.statusCode);
+		assertEquals("null", response4.text);
 	}
 }
 

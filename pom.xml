@@ -7,7 +7,7 @@
 
     <groupId>codes.rorak</groupId>
     <artifactId>betterktor</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.3</version>
     <description>A very simple and easy-to-use Ktor folder routing plugin.</description>
     <name>Better Ktor</name>
     <url>https://github.com/RORAKUS/betterktor</url>

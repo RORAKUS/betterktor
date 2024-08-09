@@ -42,6 +42,12 @@ class BKConfig {
 	var installWebSockets = true;
 	
 	/**
+	 * The default HTTP method for named route methods
+	 * Default: POST
+	 */
+	var defaultNamedRouteMethod = BKHttpMethod.POST;
+	
+	/**
 	 * The configuration for the authentication plugin
 	 */
 	fun configureAuthentication(config: AuthenticationConfig.() -> Unit) {

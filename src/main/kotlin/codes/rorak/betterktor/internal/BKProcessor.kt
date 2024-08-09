@@ -31,7 +31,7 @@ internal object BKProcessor {
 			for (routeClass in routes) {
 				val instance = routeClass.create();
 				val path = pathOf(routeClass, config, endpointPackage);
-				var auth = routeClass.getAnnotation(BKAuth::class.java)?.name;
+				var auth = routeClass.getAnnotation(BKAuth::class.java);
 				
 				val multi = routeClass.getAnnotation(BKMulti::class.java)?.namedRoutesFor;
 				
@@ -41,7 +41,7 @@ internal object BKProcessor {
 						checkMethod(method, listOf(typeOf<ApplicationCall>()), listOf(typeOf<ApplicationRequest>()));
 					};
 					
-					auth = method.findAnnotation<BKAuth>()?.name ?: auth;
+					auth = method.findAnnotation<BKAuth>() ?: auth;
 					val namedRoute = isNamedRoute(method, multi, BKRouteType.ROUTE);
 					
 					if (method.isIn(BKRoute::class.declaredFunctions))
@@ -140,7 +140,7 @@ internal object BKProcessor {
 		prefixPath: String,
 		config: BKConfig,
 		instance: Any,
-		auth: String?
+		auth: BKAuth?
 	) {
 		val declaringClass = method.javaMethod?.declaringClass!!;
 		val httpMethod = with(method) {
@@ -149,7 +149,7 @@ internal object BKProcessor {
 			
 			findAnnotation<BKMethod>()?.method
 				?: declaringClass.getAnnotation(BKDefaultMethod::class.java)?.method
-				?: BKHttpMethod.POST;
+				?: config.defaultNamedRouteMethod;
 		};
 		val path = prefixPath.addIfNeeds("/") + config.casing(method.name);
 		
@@ -161,13 +161,13 @@ internal object BKProcessor {
 		method: KFunction<*>,
 		isRegex: Boolean,
 		instance: Any,
-		auth: String?,
+		auth: BKAuth?,
 		httpMethod: String = method.name
 	) {
 		val methodStr = HttpMethod.parse(httpMethod.uppercase());
 		val exec: Route.() -> Unit = { handle { method.callSuspendIgnoreArgs(instance, call, call.request); }; }
 		
-		val register: Route.() -> Unit = {
+		registerAuth(auth) {
 			if (isRegex)
 				route(Regex("$path/?"), methodStr, exec);
 			else {
@@ -175,9 +175,6 @@ internal object BKProcessor {
 				route(path.withOrWithout("/"), methodStr, exec);
 			}
 		};
-		
-		if (auth != null) authenticate(configurations = arrayOf(auth), build = register);
-		else register();
 	}
 	
 	private fun Routing.registerWS(
@@ -245,4 +242,9 @@ internal object BKProcessor {
 	
 	private suspend fun KFunction<*>.callSuspendIgnoreArgs(vararg args: Any) =
 		callSuspend(*args.copyOfRange(0, parameters.size));
+	
+	private fun Route.registerAuth(settings: BKAuth?, method: Route.() -> Unit) {
+		if (settings == null) method();
+		else authenticate(configurations = settings.providers, settings.strategy, method);
+	}
 }

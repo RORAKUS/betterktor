@@ -30,14 +30,14 @@ The minimum version supported is **Java 11**.
 <dependency>
     <groupId>codes.rorak</groupId>
     <artifactId>betterktor</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.3</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```kotlin
-implementation("codes.rorak:betterktor:1.1.2");
+implementation("codes.rorak:betterktor:1.1.3");
 ```
 
 To quickly start with BK, just install the plugin in your main Ktor module:
@@ -71,6 +71,7 @@ install(BKPlugin) {
 	casing = BKTransform::kebabCase;
 	rootPath = "/api";
 	installWebSockets = true;
+	defaultNamedRouteMethod = BKHttpMethod.GET
 	configureAuthentication {
 		// ... auth config
 	}
@@ -85,6 +86,7 @@ install(BKPlugin) {
 * **`rootPath`** - base path for HTTP routes for all endpoints
 * **`installWebSockets`** - whether to install websockets inside BKPlugin if they are needed. Set this to _false_ if you
   want to configure them yourself
+* **`defaultNamedRouteMethod`** - default HTTP method for [Named route methods](#named-method-routes)
 * **`configureAuthentication()`** - a method/configuration of the Authentication plugin. You MUST configure it in BK, if
   you want to use [BK Auth](#authentication)
 
@@ -191,6 +193,7 @@ It's because all named routes are `POST` by default, but this behaviour can be c
 * The `@BKGet` annotation for the method. Easy and simple! (`@BKPost` also exists)
 * For other methods, such as PUT or DELETE, you can use the `@BKMethod(method)` annotation and choose a method there
 * To override this default behaviour for the class, use `@BKDefaultMethod(method)` (for the class)
+* You can change `config.defaultNamedRouteMethod` to override the default behaviour
 
 Here is an example:
 
@@ -253,7 +256,7 @@ You don't need an example...
 ## Authentication
 
 BK also supports authentication. Please read [Ktor authentication](https://ktor.io/docs/server-auth.html) first.
-You just use the `@BKAuth(name)` annotation, where name specifies the name of the provider.
+You just use the `@BKAuth(providers..., strategy)` annotation, where name specifies the providers and the strategy.
 It is possible to apply authentication to a class or a function.
 
 To use authentication routes you **MUST** install the plugin through the [config](#configuration).
