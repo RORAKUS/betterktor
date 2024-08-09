@@ -30,7 +30,7 @@ The minimum version supported is **Java 11**.
 <dependency>
     <groupId>codes.rorak</groupId>
     <artifactId>betterktor</artifactId>
-    <version>1.1.3</version>
+    <version>1.1.4</version>
 </dependency>
 ```
 
