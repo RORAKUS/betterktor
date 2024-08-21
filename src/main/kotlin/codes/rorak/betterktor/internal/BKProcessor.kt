@@ -125,7 +125,7 @@ internal object BKProcessor {
 					.filter { path == it.first };
 				
 				if (handlers.isNotEmpty()) {
-					handlers.forEach { it.second.callSuspend(it.third, call, cause.cause); };
+					handlers.forEach { it.second.callSuspend(it.third, call, cause.cause ?: cause); };
 					return@exception;
 				}
 				
