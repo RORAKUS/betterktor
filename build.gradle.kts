@@ -6,7 +6,7 @@ plugins {
 };
 
 group = "codes.rorak";
-version = "1.1.7-1-SNAPSHOT";
+version = "1.1.7";
 description = "A very simple and easy-to-use Ktor folder routing plugin.";
 
 repositories {

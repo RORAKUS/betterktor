@@ -30,14 +30,14 @@ The minimum version supported is **Java 11**.
 <dependency>
     <groupId>codes.rorak</groupId>
     <artifactId>betterktor</artifactId>
-    <version>1.1.6</version>
+    <version>1.1.7</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```kotlin
-implementation("codes.rorak:betterktor:1.1.6");
+implementation("codes.rorak:betterktor:1.1.7");
 ```
 
 To quickly start with BK, just install the plugin in your main Ktor module:
