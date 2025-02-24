@@ -2,6 +2,7 @@
 kotlin = "2.1.10"
 ktor = "3.1.0"
 reflections = "0.10.2"
+maven-publish = "0.30.0"
 
 [libraries]
 ktor-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
@@ -12,3 +13,6 @@ reflections = { group = "org.reflections", name = "reflections", version.ref = "
 
 ktor-engine-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
 ktor-test = { group = "io.ktor", name = "ktor-server-test-host", version.ref = "ktor" }
+
+[plugins]
+mavenPublish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }

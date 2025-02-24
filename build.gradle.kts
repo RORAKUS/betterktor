@@ -1,7 +1,9 @@
+import com.vanniktech.maven.publish.SonatypeHost
+
 plugins {
 	kotlin("jvm") version libs.versions.kotlin;
+	alias(libs.plugins.mavenPublish);
 	`java-library`;
-	`maven-publish`;
 	signing;
 };
 
@@ -38,61 +40,31 @@ kotlin {
 	jvmToolchain(17);
 };
 
-java {
-	withSourcesJar();
-	withJavadocJar();
-};
-
-publishing {
-	publications {
-		create<MavenPublication>("maven") {
-			from(components["java"]);
-			
-			pom {
-				name = "Better Ktor";
-				description = project.description;
-				url = "https://github.com/RORAKUS/betterktor";
-				packaging = "jar";
-				developers {
-					developer {
-						id = "rorakus";
-						name = "RORAK";
-						email = "rorakcodes@gmail.com";
-					};
-				};
-				licenses {
-					license {
-						name = "GNU General Public License v3.0";
-						url = "https://opensource.org/license/gpl-3-0";
-						distribution = "repo";
-					};
-				};
-				scm {
-					connection = "scm:git:https://github.com/RORAKUS/betterktor.git";
-					developerConnection = "scm:git:https://github.com/RORAKUS/betterktor.git";
-					url = "https://github.com/RORAKUS/betterktor";
-				};
+mavenPublishing {
+	publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL);
+	signAllPublications();
+	pom {
+		name = "Better Ktor";
+		description = project.description;
+		url = "https://github.com/RORAKUS/betterktor";
+		developers {
+			developer {
+				id = "rorakus";
+				name = "RORAK";
+				email = "rorakcodes@gmail.com";
 			};
 		};
-	};
-	repositories {
-		maven {
-			name = "OSSHR";
-			url = uri(
-				if (version.toString().endsWith("SNAPSHOT"))
-					"https://s01.oss.sonatype.org/content/repositories/snapshots/"
-				else
-					"https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
-			);
-			credentials {
-				username = System.getenv("OSSHR_USERNAME");
-				password = System.getenv("OSSHR_TOKEN");
+		licenses {
+			license {
+				name = "GNU General Public License v3.0";
+				url = "https://opensource.org/license/gpl-3-0";
+				distribution = "repo";
 			};
 		};
+		scm {
+			connection = "scm:git:https://github.com/RORAKUS/betterktor.git";
+			developerConnection = "scm:git:https://github.com/RORAKUS/betterktor.git";
+			url = "https://github.com/RORAKUS/betterktor";
+		};
 	};
-};
-
-signing {
-	useInMemoryPgpKeys(System.getenv("GPG_PRIVATE_KEY"), System.getenv("GPG_PASSPHRASE"));
-	sign(publishing.publications["maven"]);
 };
