@@ -1,0 +1,14 @@
+[versions]
+kotlin = "2.1.10"
+ktor = "3.1.0"
+reflections = "0.10.2"
+
+[libraries]
+ktor-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-plugin-statusPages = { group = "io.ktor", name = "ktor-server-status-pages", version.ref = "ktor" }
+ktor-plugin-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.ref = "ktor" }
+ktor-plugin-auth = { group = "io.ktor", name = "ktor-server-auth", version.ref = "ktor" }
+reflections = { group = "org.reflections", name = "reflections", version.ref = "reflections" }
+
+ktor-engine-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
+ktor-test = { group = "io.ktor", name = "ktor-server-test-host", version.ref = "ktor" }
