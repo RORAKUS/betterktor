@@ -86,7 +86,7 @@ publishing {
 			);
 			credentials {
 				username = System.getenv("OSSHR_USERNAME");
-				password = System.getenv("OSSHR_PASSWORD");
+				password = System.getenv("OSSHR_TOKEN");
 			};
 		};
 	};
