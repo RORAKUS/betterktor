@@ -21,8 +21,17 @@ dependencies {
 	compileOnly(libs.ktor.plugin.statusPages);
 	compileOnly(libs.ktor.plugin.websockets);
 	compileOnly(libs.ktor.plugin.auth);
+	compileOnly(libs.ktor.plugin.sse);
 	
-	implementation(libs.reflections);
+	compileOnly(libs.ktor.plugin.template.freemaker);
+	compileOnly(libs.ktor.plugin.template.velocity);
+	compileOnly(libs.ktor.plugin.template.mustache);
+	compileOnly(libs.ktor.plugin.template.thymeleaf);
+	compileOnly(libs.ktor.plugin.template.pebble);
+	compileOnly(libs.ktor.plugin.template.jte);
+	
+	implementation(libs.classgraph);
+	implementation(kotlin("reflect"));
 	
 	testImplementation(kotlin("test"));
 	testImplementation(libs.ktor.test);

@@ -1,15 +1,25 @@
 [versions]
-kotlin = "2.1.10"
-ktor = "3.1.0"
-reflections = "0.10.2"
+kotlin = "2.1.20"
+ktor = "3.1.2"
 maven-publish = "0.30.0"
+classgraph = "4.8.179"
 
 [libraries]
 ktor-core = { group = "io.ktor", name = "ktor-server-core", version.ref = "ktor" }
+ktor-plugin-contentNegotiation = { group = "io.ktor", name = "ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-plugin-statusPages = { group = "io.ktor", name = "ktor-server-status-pages", version.ref = "ktor" }
 ktor-plugin-websockets = { group = "io.ktor", name = "ktor-server-websockets", version.ref = "ktor" }
 ktor-plugin-auth = { group = "io.ktor", name = "ktor-server-auth", version.ref = "ktor" }
-reflections = { group = "org.reflections", name = "reflections", version.ref = "reflections" }
+ktor-plugin-sse = { group = "io.ktor", name = "ktor-server-sse", version.ref = "ktor" }
+
+ktor-plugin-template-freemaker = { group = "io.ktor", name = "ktor-server-freemarker", version.ref = "ktor" }
+ktor-plugin-template-velocity = { group = "io.ktor", name = "ktor-server-velocity", version.ref = "ktor" }
+ktor-plugin-template-mustache = { group = "io.ktor", name = "ktor-server-mustache", version.ref = "ktor" }
+ktor-plugin-template-thymeleaf = { group = "io.ktor", name = "ktor-server-thymeleaf", version.ref = "ktor" }
+ktor-plugin-template-pebble = { group = "io.ktor", name = "ktor-server-pebble", version.ref = "ktor" }
+ktor-plugin-template-jte = { group = "io.ktor", name = "ktor-server-jte", version.ref = "ktor" }
+
+classgraph = { group = "io.github.classgraph", name = "classgraph", version.ref = "classgraph" }
 
 ktor-engine-netty = { group = "io.ktor", name = "ktor-server-netty", version.ref = "ktor" }
 ktor-test = { group = "io.ktor", name = "ktor-server-test-host", version.ref = "ktor" }
