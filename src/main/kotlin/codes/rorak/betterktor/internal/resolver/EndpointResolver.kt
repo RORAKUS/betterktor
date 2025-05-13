@@ -102,7 +102,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 			val normalEndpoint = endpoint as NormalEndpoint;
 			// set the values
 			normalEndpoint.httpMethod = httpMethod!!;
-			normalEndpoint.mutex = CommonProcessor.mutexProcessor(function, clazz, cache);
+			normalEndpoint.mutex = CommonProcessor.mutexProcessor(function, clazz?.mutex, cache);
 			// process the rest
 			processReturnType(normalEndpoint);
 		};
@@ -129,7 +129,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		};
 	};
 	
-	fun checkIgnore() {
+	private fun checkIgnore() {
 		// if annotation ignored, it is always ignored
 		if (function.hasAnnotation<Ignore>()) throw Interrupt;
 		
@@ -138,7 +138,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 			throw Interrupt;
 	}
 	
-	fun processTypeAndMethod() {
+	private fun processTypeAndMethod() {
 		// type: override -> annotation -> name? -> parent -> normal
 		// method: override -> annotation -> name? -> parent -> default
 		
@@ -174,7 +174,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		};
 	}
 	
-	fun processPath() {
+	private fun processPath() {
 		// use the common processor to get the path
 		val (path, _) = CommonProcessor.pathProcessor(
 			element = function,
@@ -188,7 +188,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		endpoint.path = path;
 	}
 	
-	fun processParameterTypes() {
+	private fun processParameterTypes() {
 		// set the parameter list
 		endpoint.parameterTypes.addAll(function.valueParameters.map { p ->
 			// get the classifier (KClass instance), throw on error
@@ -216,7 +216,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		);
 	}
 	
-	fun processReturnType(normalEndpoint: NormalEndpoint) {
+	private fun processReturnType(normalEndpoint: NormalEndpoint) {
 		// get the return type
 		val returnType = function.returnType.classifier as? KClass<*>
 			?: throw BetterKtorError("Invalid return type!", cache);
@@ -225,7 +225,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		normalEndpoint.returnType = if (function.hasAnnotation<IgnoreReturn>()) Unit::class else returnType;
 	}
 	
-	fun processOverride() = with(function) {
+	private fun processOverride() = with(function) {
 		// if a normal endpoint method, set the endpoint and the method
 		if (isOverridenFrom(codes.rorak.betterktor.api.Endpoint::class)) {
 			overrideType = EndpointType.ENDPOINT;
@@ -252,7 +252,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		}
 	}
 	
-	fun processAnnotations() = function.annotations.forEach { a ->
+	private fun processAnnotations() = function.annotations.forEach { a ->
 		// an overriden endpoint cannot be an annotation type, nor an annotation method
 		if ((a.isTypeAnnotation || a.isAnyMethodAnnotation || a.isHandleAnnotation) && overrideType != null)
 			throw BetterKtorError(
@@ -316,7 +316,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 			throw BetterKtorError("Only a normal endpoint can have a http method defined!", cache);
 	};
 	
-	fun processNaming() = with(cache.naming) {
+	private fun processNaming() = with(cache.naming) {
 		var match: MatchResult? = null;
 		
 		// http method
@@ -326,7 +326,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 			
 			type = EndpointType.ENDPOINT;
 			httpMethod = method;
-			editedName = match.groupValues.getOrNull(1);
+			editedName = match.groupValues.getOrNull(1)?.decapitalize();
 			namedRoute = editedName != null;
 			
 			return;
@@ -337,7 +337,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		if (match != null) {
 			type = EndpointType.ENDPOINT;
 			httpMethod = ANY_CALL_METHOD;
-			editedName = match.groupValues.getOrNull(1);
+			editedName = match.groupValues.getOrNull(1)?.decapitalize();
 			namedRoute = editedName != null;
 			
 			return;
@@ -347,7 +347,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		match = websocket.matchEntire(function.name);
 		if (match != null) {
 			type = EndpointType.WEBSOCKET;
-			editedName = match.groupValues.getOrNull(1);
+			editedName = match.groupValues.getOrNull(1)?.decapitalize();
 			namedRoute = editedName != null;
 			
 			return;
@@ -357,7 +357,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		match = sse.matchEntire(function.name);
 		if (match != null) {
 			type = EndpointType.SSE;
-			editedName = match.groupValues.getOrNull(1);
+			editedName = match.groupValues.getOrNull(1)?.decapitalize();
 			namedRoute = editedName != null;
 			
 			return;
@@ -367,7 +367,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		match = errorHandler.matchEntire(function.name);
 		if (match != null) {
 			type = EndpointType.ERROR_HANDLER;
-			editedName = match.groupValues.getOrNull(1);
+			editedName = match.groupValues.getOrNull(1)?.decapitalize();
 			namedRoute = editedName != null;
 			
 			return;

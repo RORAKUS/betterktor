@@ -17,7 +17,7 @@ internal class NormalEndpoint(cache: BetterKtorCache, f: KFunction<*>):
 	var mutex: Mutex? = null;
 	
 	override fun register() {
-		TODO("Not yet implemented");
+		TODO();
 	}
 	
 	override fun toString() = """

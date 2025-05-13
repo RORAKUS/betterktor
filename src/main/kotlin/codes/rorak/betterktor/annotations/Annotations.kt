@@ -185,7 +185,7 @@ annotation class ComplexWebsocket;
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class CWOnConnection;
+annotation class CWOnConnect;
 
 /**
  * Makes the annotated method a connection close handler for
@@ -221,7 +221,7 @@ annotation class CWOnError;
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class CWOnSend;
+annotation class CWOnMessageSend;
 
 /**
  * Sets the annotated property to be the flow for the complex websocket.

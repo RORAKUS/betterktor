@@ -92,7 +92,7 @@ internal object CommonProcessor {
 	// process the mutex of an element
 	fun mutexProcessor(
 		element: KAnnotatedElement,
-		parent: EndpointClass?,
+		parentMutex: Mutex?,
 		cache: BetterKtorCache
 	): Mutex? {
 		// if no mutex annotation found, return null
@@ -103,7 +103,7 @@ internal object CommonProcessor {
 		// get the mutex object
 		val mutexObject = mutexAnnotation?.name?.let { BetterKtor.mutexMap.getOrPut(it) { Mutex() } };
 		// get the final mutex -> annotation -> parent -> default only if mutex must be present
-		val mutex = mutexObject ?: parent?.mutex ?: if (cache.config.useMutex) BetterKtor.defaultMutex else null;
+		val mutex = mutexObject ?: parentMutex ?: if (cache.config.useMutex) BetterKtor.defaultMutex else null;
 		
 		// return the mutex value
 		return mutex;

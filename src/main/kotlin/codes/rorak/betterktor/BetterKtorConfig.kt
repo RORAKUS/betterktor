@@ -250,7 +250,7 @@ class BetterKtorNamingConfig {
 	/**
 	 * The regex for complex websocket method for handling new connections
 	 */
-	var complexWebsocketOnConnect = "^onConnection$".toRegex();
+	var complexWebsocketOnConnect = "^onConnect$".toRegex();
 	
 	/**
 	 * The regex for complex websocket method for handling the connection end
@@ -261,6 +261,11 @@ class BetterKtorNamingConfig {
 	 * The regex for complex websocket method for handling a new message
 	 */
 	var complexWebsocketOnMessage = "^onMessage$".toRegex();
+	
+	/**
+	 * The regex for complex websocket method for handling a message, that was sent to the client
+	 */
+	var complexWebsocketOnMessageSend = "^onMessageSend$".toRegex();
 	
 	/**
 	 * The regex for complex websocket method for handling errors

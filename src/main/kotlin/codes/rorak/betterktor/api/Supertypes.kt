@@ -5,12 +5,12 @@ import codes.rorak.betterktor.annotations.Inject
 import codes.rorak.betterktor.annotations.InjectCall
 import codes.rorak.betterktor.annotations.InjectOption
 import codes.rorak.betterktor.annotations.Mutex
+import codes.rorak.betterktor.internal.endpoints.ComplexWebsocketEndpoint
+import codes.rorak.betterktor.internal.resolver.BetterKtorCache
 import io.ktor.server.application.*
 import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.isActive
-import kotlin.reflect.full.memberProperties
+import kotlin.reflect.KClass
 
 interface BetterKtorEndpoint;
 
@@ -211,73 +211,46 @@ interface ErrorHandler<ErrorType: Throwable>: BetterKtorEndpoint {
 }
 
 /**
- * The base structure for a complex websocket endpoint
- */
-interface ComplexWebsocket: BetterKtorEndpoint {
-	/**
-	 * A method handler for the websocket connection start
-	 */
-	suspend fun onConnect() {}
-	
-	/**
-	 * A method handler for the websocket connection start
-	 */
-	suspend fun onConnect(session: DefaultWebSocketServerSession) {}
-	
-	
-	/**
-	 * A method handler for the websocket connection close
-	 */
-	suspend fun onClose() {}
-	
-	/**
-	 * A method handler for the websocket connection close
-	 */
-	suspend fun onClose(session: DefaultWebSocketServerSession) {}
-	
-	
-	/**
-	 * A method handler for the websocket message receive event
-	 */
-	suspend fun onMessage(message: String) {}
-	
-	/**
-	 * A method handler for the websocket message receive event
-	 */
-	suspend fun onMessage(session: DefaultWebSocketServerSession, message: String) {}
-	
-	
-	/**
-	 * A method handler for the websocket before message send event
-	 */
-	suspend fun onMessageSend(message: String) {}
-	
-	/**
-	 * A method handler for the websocket before message send event
-	 */
-	suspend fun onMessageSend(session: DefaultWebSocketServerSession, message: String) {}
-	
-	
-	/**
-	 * A method handler for the websocket error
-	 */
-	suspend fun onError(error: Throwable) {}
-	
-	/**
-	 * A method handler for the websocket error
-	 */
-	suspend fun onError(session: DefaultWebSocketServerSession, error: Throwable) {}
-}
-
-/**
  * An extendable class for complex websockets providing session injection and
  * reflection based message sending. It is recommended for every complex websocket
  * class to extend it.
  *
+ * @param SelfType The type of the current class. Just use the current class name.
+ *
  * @see Inject
- * @see ComplexWebsocket
  */
-abstract class PlainComplexWebsocket: BetterKtorEndpoint {
+@Suppress("UNCHECKED_CAST")
+abstract class ComplexWebsocket<SelfType: ComplexWebsocket<SelfType>>: BetterKtorEndpoint {
+	// Internal variables
+	
+	// the handlers called when the websocket is destroyed during the sending phase
+	internal val destroyHandlers: List<() -> Unit> = mutableListOf();
+	
+	// the information about the endpoint
+	internal lateinit var endpointInfo: ComplexWebsocketEndpoint;
+	
+	// needed, because isInitialized cannot be called in inline functions
+	internal val isInitialized get() = ::endpointInfo.isInitialized;
+	
+	// the current app cache
+	internal lateinit var cache: BetterKtorCache;
+	
+	// the send method set by the registerer
+	@PublishedApi
+	internal lateinit var sendMethod: suspend (data: Any, type: KClass<*>) -> Unit;
+	
+	/**
+	 * All instances of the current complex websocket class. Automatically updated on connection/closing.
+	 */
+	val instances: List<SelfType>
+		get() {
+			// if the cache is not set
+			if (!::cache.isInitialized) error("BetterKtor is not installed for this endpoint!");
+			
+			// find the list of the instances by the current type
+			return cache.cwInstances[this::class] as List<SelfType>;
+		}
+	
 	/**
 	 * The injected session. During an endpoint handler execution, this
 	 * property will contain the current session instance.
@@ -287,12 +260,18 @@ abstract class PlainComplexWebsocket: BetterKtorEndpoint {
 	 * @see Inject
 	 */
 	@Inject(InjectOption.SESSION)
-	lateinit var session: DefaultWebSocketServerSession;
+	protected lateinit var session: DefaultWebSocketServerSession;
 	
 	/**
-	 * Mainly for internal usage, are called after [onClose] by the [send] method if it fails.
+	 * The injected call. During an endpoint handler execution, this
+	 * property will contain the current call instance.
+	 * **Beware**: When using `object` endpoints without the [Mutex] annotation,
+	 * this will not work.
+	 *
+	 * @see Inject
 	 */
-	var destroyHandlers: List<() -> Unit> = mutableListOf();
+	@InjectCall
+	protected lateinit var call: ApplicationCall;
 	
 	/**
 	 * A method handler for the websocket connection start
@@ -307,38 +286,7 @@ abstract class PlainComplexWebsocket: BetterKtorEndpoint {
 	/**
 	 * Sends a message to the websocket
 	 */
-	@Suppress("UNCHECKED_CAST")
-	suspend inline fun <reified T> send(message: T) {
-		// check if the session is active
-		if (!session.isActive) {
-			onClose();
-			destroyHandlers.forEach { it() };
-			return;
-		}
-		
-		// get the property of the selected flow
-		val property = this::class.memberProperties.find {
-			// the main type, for List<String> it would be List
-			val type = it.returnType;
-			// compares the type with the SharedFlow type
-			val isSharedFlow = type.classifier == MutableSharedFlow::class;
-			// check if there is just one argument (for List<String> it's [String])
-			// and compares it to the type parameter of the function
-			val hasCorrectArgument = with(type.arguments) {
-				size == 1 && first().type!!.classifier == T::class;
-			};
-			
-			// if the type is SharedFlow<T> then return the property
-			isSharedFlow && hasCorrectArgument;
-		};
-		
-		// null check
-		checkNotNull(property) { "No flow property found for type '${T::class}'" };
-		
-		// get the flow instance
-		val flow = property.getter.call(this) as MutableSharedFlow<T>;
-		
-		// send the message
-		flow.emit(message);
+	suspend inline fun <reified T: Any> send(data: T) {
+		sendMethod(data, T::class);
 	}
 }

@@ -2,6 +2,7 @@ package codes.rorak.betterktor.internal.resolver
 
 import codes.rorak.betterktor.BetterKtorConfig
 import codes.rorak.betterktor.internal.endpoints.BaseEndpoint
+import codes.rorak.betterktor.internal.other.declaringClass
 import codes.rorak.betterktor.internal.other.isTopLevel
 import io.ktor.server.application.*
 import kotlin.reflect.KClass
@@ -14,6 +15,8 @@ internal class BetterKtorCache(val config: BetterKtorConfig, val application: Ap
 	val strict get() = config.strict;
 	
 	val endpoints = mutableListOf<BaseEndpoint>();
+	
+	val cwInstances = mutableMapOf<KClass<*>, List<Any>>();
 	
 	// returns the error message information with currently edited class/method
 	fun errorMeta(): String {
@@ -47,7 +50,7 @@ internal class BetterKtorCache(val config: BetterKtorConfig, val application: Ap
 			currentFile = function.javaMethod!!.declaringClass.canonicalName.substringBeforeLast("Kt") + ".kt";
 			currentClass = null;
 		} else {
-			currentClass = function.javaMethod!!.declaringClass.kotlin;
+			currentClass = function.declaringClass;
 			currentFile = null;
 		}
 	}
@@ -55,6 +58,7 @@ internal class BetterKtorCache(val config: BetterKtorConfig, val application: Ap
 	// sets the property that is being resolved
 	fun current(prop: KProperty<*>) {
 		currentProperty = prop;
+		currentFunction = null;
 	}
 	
 	private var currentClass: KClass<*>? = null;

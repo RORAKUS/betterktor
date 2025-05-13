@@ -2,7 +2,6 @@ package codes.rorak.betterktor.internal.resolver
 
 import codes.rorak.betterktor.annotations.*
 import codes.rorak.betterktor.api.BetterKtorEndpoint
-import codes.rorak.betterktor.api.PlainComplexWebsocket
 import codes.rorak.betterktor.internal.endpoints.EndpointClass
 import codes.rorak.betterktor.internal.other.ANY_CALL_METHOD
 import codes.rorak.betterktor.internal.other.EndpointType
@@ -37,7 +36,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		processDefaultTypeAndMethod();
 		processPath();
 		endpoint.auth = CommonProcessor.authProcessor(clazz, outerClass, cache);
-		endpoint.mutex = CommonProcessor.mutexProcessor(clazz, outerClass, cache);
+		endpoint.mutex = CommonProcessor.mutexProcessor(clazz, outerClass?.mutex, cache);
 		processInjectedProperties();
 		
 		return@runCatching endpoint;
@@ -49,7 +48,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		return@getOrElse endpoint;
 	};
 	
-	fun checkIgnore() {
+	private fun checkIgnore() {
 		// if annotation ignored, it is always ignored
 		if (clazz.hasAnnotation<Ignore>()) throw Interrupt;
 		
@@ -58,7 +57,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 			throw Interrupt;
 	}
 	
-	fun processDefaultTypeAndMethod() {
+	private fun processDefaultTypeAndMethod() {
 		// type: annotation type -> interface type -> parent type -> default type
 		// method: annotation -> default
 		
@@ -90,7 +89,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		endpoint.defaultHttpMethod = defaultHttpMethod!!;
 	}
 	
-	fun processPath() {
+	private fun processPath() {
 		// use the common processor to get the path
 		val (path, casing) = CommonProcessor.pathProcessor(
 			element = clazz,
@@ -105,7 +104,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		endpoint.casing = casing;
 	}
 	
-	fun processInjectedProperties() = clazz.memberProperties.forEach { p ->
+	private fun processInjectedProperties() = clazz.memberProperties.forEach { p ->
 		cache.current(p);
 		
 		// get the inject annotation
@@ -138,7 +137,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		endpoint.injectedProperties[p] = injectAnnotation.option to injectAnnotation.parameter;
 	};
 	
-	fun processAnnotations() = clazz.annotations.forEach { a ->
+	private fun processAnnotations() = clazz.annotations.forEach { a ->
 		// an endpoint cannot have multiple type annotations
 		if (a.isTypeAnnotation && defaultType != null)
 			throw BetterKtorError("An endpoint class cannot have multiple default type annotations!", cache);
@@ -169,7 +168,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 			throw BetterKtorError("A complex websocket class cannot have a default http method!", cache);
 	}
 	
-	fun processInterfaceTypes() = clazz.allSuperclasses.forEach { c ->
+	private fun processInterfaceTypes() = clazz.allSuperclasses.forEach { c ->
 		// the class cannot be a complex websocket and a normal endpoint at the same time
 		if (
 		// current == CWS && type != null|CWS
@@ -189,10 +188,8 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 			codes.rorak.betterktor.api.Endpoint::class -> interfaceDefaultType = EndpointType.ENDPOINT;
 			codes.rorak.betterktor.api.Websocket::class -> interfaceDefaultType = EndpointType.WEBSOCKET;
 			codes.rorak.betterktor.api.SSE::class -> interfaceDefaultType = EndpointType.SSE;
-			codes.rorak.betterktor.api.ErrorHandler::class -> interfaceDefaultType =
-				EndpointType.ERROR_HANDLER;
-			codes.rorak.betterktor.api.ComplexWebsocket::class, PlainComplexWebsocket::class ->
-				interfaceDefaultType = EndpointType.COMPLEX_WEBSOCKET;
+			codes.rorak.betterktor.api.ErrorHandler::class -> interfaceDefaultType = EndpointType.ERROR_HANDLER;
+			codes.rorak.betterktor.api.ComplexWebsocket::class -> interfaceDefaultType = EndpointType.COMPLEX_WEBSOCKET;
 		}
 	}
 }

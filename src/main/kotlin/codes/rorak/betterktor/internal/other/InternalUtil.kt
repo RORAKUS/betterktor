@@ -3,7 +3,6 @@ package codes.rorak.betterktor.internal.other
 import codes.rorak.betterktor.BetterKtorConfig
 import codes.rorak.betterktor.annotations.*
 import codes.rorak.betterktor.api.BetterKtor
-import codes.rorak.betterktor.api.PlainComplexWebsocket
 import io.ktor.http.*
 import java.net.URL
 import java.util.*
@@ -54,6 +53,9 @@ internal fun debug(message: String) = log.debug(message);
 internal fun String.capitalize() =
 	this.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() };
 
+internal fun String.decapitalize() =
+	this.replaceFirstChar { if (it.isUpperCase()) it.lowercase(Locale.getDefault()) else it.toString() };
+
 internal fun String.dropLines(num: Int) = split("\n").drop(num).joinToString("\n");
 
 // if both strings contain something, join them with a dot
@@ -65,8 +67,20 @@ internal fun <T> Iterable<T>.containsAnyFrom(collection: Iterable<T>) = this.int
 // finds a key by value in a map
 internal fun <K, V> Map<K, V>.getKey(value: V): K? = this.entries.firstOrNull { it.value == value }?.key;
 
+// removes the first element of a collection matching a predicate
+internal fun <T> MutableList<T>.removeFirst(predicate: (T) -> Boolean): Boolean {
+	val index = indexOfFirst(predicate);
+	if (index == -1) return false;
+	
+	removeAt(index);
+	return true;
+}
+
 // Reflection API Extensions
 private val List<KParameter>.info get() = map { it.type to it.isVararg }
+private fun KFunction<*>.isSimilarTo(other: KFunction<*>) =
+	name == other.name && valueParameters.info == other.valueParameters.info && returnType == other.returnType;
+
 internal val KFunction<*>.isTopLevel get() = javaMethod?.declaringClass?.getAnnotation(Metadata::class.java)?.kind == 2;
 internal val KAnnotatedElement.annotationClasses get() = annotations.map { it.annotationClass };
 internal val Annotation.isTypeAnnotation
@@ -98,11 +112,20 @@ internal val Annotation.isEndpointMethodAnnotation
 internal val Annotation.isAnyMethodAnnotation get() = isMethodAnnotation || isEndpointMethodAnnotation;
 
 internal val KClass<*>.isCWType
-	get() = isSubclassOf(codes.rorak.betterktor.api.ComplexWebsocket::class) ||
-			isSubclassOf(PlainComplexWebsocket::class);
+	get() = isSubclassOf(codes.rorak.betterktor.api.ComplexWebsocket::class);
+
+internal val KFunction<*>.declaringClass get() = javaMethod?.declaringClass?.kotlin!!;
 
 internal fun KFunction<*>.isOverridenFrom(clazz: KClass<*>) =
 	// if the method's declaring class extends the class and the class contains a method with the same signature
-	this.javaMethod?.declaringClass?.kotlin?.isSubclassOf(clazz) == true && clazz.declaredMemberFunctions.any {
-		it.name == this.name && it.valueParameters.info == this.valueParameters.info && it.returnType == this.returnType
-	};
+	this.declaringClass.isSubclassOf(clazz) && clazz.declaredMemberFunctions.any { it.isSimilarTo(this) };
+
+internal fun KFunction<*>.isOverridenFrom(function: KFunction<*>) =
+	this.declaringClass.isSubclassOf(function.declaringClass) && function.isSimilarTo(this);
+
+// call a function autosorting its arguments
+internal fun KFunction<*>.callSorted(self: Any?, args: List<Any?>) {
+	TODO();
+}
+
+internal fun KFunction<*>.callSorted(self: Any?, vararg args: Any?) = callSorted(self, args.toList());
