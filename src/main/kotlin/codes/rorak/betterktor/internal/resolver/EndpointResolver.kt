@@ -4,6 +4,7 @@ import codes.rorak.betterktor.annotations.*
 import codes.rorak.betterktor.internal.endpoints.EndpointClass
 import codes.rorak.betterktor.internal.endpoints.ErrorHandlerEndpoint
 import codes.rorak.betterktor.internal.endpoints.FunctionEndpoint
+import codes.rorak.betterktor.internal.endpoints.FunctionEndpoint.ParameterGetter
 import codes.rorak.betterktor.internal.endpoints.NormalEndpoint
 import codes.rorak.betterktor.internal.endpoints.SSEEndpoint
 import codes.rorak.betterktor.internal.endpoints.WebsocketEndpoint
@@ -11,6 +12,7 @@ import codes.rorak.betterktor.internal.other.*
 import codes.rorak.betterktor.util.BetterKtorError
 import io.ktor.http.*
 import io.ktor.server.application.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.request.*
 import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
@@ -98,7 +100,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		
 		// type specific properties -> normal endpoint
 		if (type == EndpointType.ENDPOINT) {
-			// cast the endpoint
+			// cast the endpoint object
 			val normalEndpoint = endpoint as NormalEndpoint;
 			// set the values
 			normalEndpoint.httpMethod = httpMethod!!;
@@ -109,9 +111,25 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 		
 		// type specific properties -> error handler endpoint
 		if (type == EndpointType.ERROR_HANDLER) {
+			// check if status pages package is installed
+			runCatching { cache.application.pluginOrNull(StatusPages) }.onFailure {
+				throw BetterKtorError(
+					"Cannot use an error handler when StatusPages plugin package is not implemented!", cache
+				);
+			};
+			
+			// authentication is not supported for error handlers
+			endpoint.auth = null; // --> there could be no direct annotation auth, but the endpoint inherited it
+			if (function.hasAnnotation<Auth>())
+				throw BetterKtorError("Authentication is not supported for error handlers!", cache);
+			
+			// cast the endpoint object
+			val errorHandlerEndpoint = endpoint as ErrorHandlerEndpoint
 			// set the error type
-			(endpoint as ErrorHandlerEndpoint).errorType =
-				endpoint.parameterTypes.first { it.isSubclassOf(Throwable::class) };
+			errorHandlerEndpoint.errorType =
+				errorHandlerEndpoint.parameterTypes.keys.first { it.isSubclassOf(Throwable::class) };
+			// set the mutex
+			errorHandlerEndpoint.mutex = CommonProcessor.mutexProcessor(function, clazz?.mutex, cache);
 		};
 		
 		return@runCatching endpoint;
@@ -190,26 +208,29 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 	
 	private fun processParameterTypes() {
 		// set the parameter list
-		endpoint.parameterTypes.addAll(function.valueParameters.map { p ->
-			// get the classifier (KClass instance), throw on error
-			p.type.classifier as? KClass<*>
+		endpoint.parameterTypes.putAll(function.valueParameters.associate { p ->
+			// get the classifier (KClass instance) or throw on error
+			val type = p.type.classifier as? KClass<*>
 				?: throw BetterKtorError("Parameter '${p.name}' has an invalid type!", cache);
+			
+			// associate with the getter function
+			type to ParameterGetter.of(type, p.type.isMarkedNullable, cache);
 		});
 		
 		// the list cannot contain more than one parameter with the specified types
 		if (
-			(endpoint.parameterTypes.count { it == ApplicationCall::class } > 1) ||
-			(endpoint.parameterTypes.count { it == ApplicationRequest::class } > 1) ||
-			(endpoint.parameterTypes.count { it == DefaultWebSocketServerSession::class } > 1) ||
-			(endpoint.parameterTypes.count { it == ServerSSESession::class } > 1) ||
-			(endpoint.parameterTypes.count { it.isSubclassOf(Throwable::class) } > 1)
+			(endpoint.parameterTypes.count { it.key == ApplicationCall::class } > 1) ||
+			(endpoint.parameterTypes.count { it.key == ApplicationRequest::class } > 1) ||
+			(endpoint.parameterTypes.count { it.key == DefaultWebSocketServerSession::class } > 1) ||
+			(endpoint.parameterTypes.count { it.key == ServerSSESession::class } > 1) ||
+			(endpoint.parameterTypes.count { it.key.isSubclassOf(Throwable::class) } > 1)
 		) throw BetterKtorError("There can be only one call, one request, one session and one error parameter!", cache);
 		
 		// check if the endpoint type matches the parameter for websockets and SSEs
 		if (
 			(DefaultWebSocketServerSession::class in endpoint.parameterTypes && type != EndpointType.WEBSOCKET) ||
 			(ServerSSESession::class in endpoint.parameterTypes && type != EndpointType.SSE) ||
-			(endpoint.parameterTypes.any { it.isSubclassOf(Throwable::class) } && type != EndpointType.ERROR_HANDLER)
+			(endpoint.parameterTypes.any { it.key.isSubclassOf(Throwable::class) } && type != EndpointType.ERROR_HANDLER)
 		) throw BetterKtorError(
 			"Invalid paramater type! 'DefaultWebSocketServerSession': only for websockets, 'ServerSSESession': only for SSEs, subclass of 'Throwable': only for error handlers",
 			cache
@@ -217,6 +238,9 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 	}
 	
 	private fun processReturnType(normalEndpoint: NormalEndpoint) {
+		// the return type cannot be nullable
+		if (function.returnType.isMarkedNullable) throw BetterKtorError("A return type cannot be nullable!", cache);
+		
 		// get the return type
 		val returnType = function.returnType.classifier as? KClass<*>
 			?: throw BetterKtorError("Invalid return type!", cache);

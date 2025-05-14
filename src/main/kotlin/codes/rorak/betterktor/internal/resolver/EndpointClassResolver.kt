@@ -12,6 +12,7 @@ import codes.rorak.betterktor.internal.other.isTypeAnnotation
 import codes.rorak.betterktor.util.BetterKtorError
 import io.ktor.http.*
 import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
@@ -121,6 +122,9 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		
 		// skip normal properties
 		if (injectAnnotation == null) return@forEach;
+		
+		// check if the property is mutable
+		if (p !is KMutableProperty1<*, *>) throw BetterKtorError("An injected property must be mutable!", cache);
 		
 		// check the parameter -> cannot be empty if required
 		if (injectAnnotation.parameter.isEmpty() && injectAnnotation.option.parameter == InjectOption.Parameter.REQUIRED)

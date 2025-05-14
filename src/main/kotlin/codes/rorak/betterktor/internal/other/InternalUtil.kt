@@ -122,10 +122,3 @@ internal fun KFunction<*>.isOverridenFrom(clazz: KClass<*>) =
 
 internal fun KFunction<*>.isOverridenFrom(function: KFunction<*>) =
 	this.declaringClass.isSubclassOf(function.declaringClass) && function.isSimilarTo(this);
-
-// call a function autosorting its arguments
-internal fun KFunction<*>.callSorted(self: Any?, args: List<Any?>) {
-	TODO();
-}
-
-internal fun KFunction<*>.callSorted(self: Any?, vararg args: Any?) = callSorted(self, args.toList());

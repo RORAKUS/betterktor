@@ -23,7 +23,7 @@ internal class ComplexWebsocketEndpoint(cache: BetterKtorCache, val clazz: KClas
 	var mutex: Mutex? = null;
 	
 	override fun register() {
-		TODO("Not yet implemented");
+		TODO();
 	}
 	
 	data class FunctionObject(

@@ -16,7 +16,8 @@ repositories {
 };
 
 dependencies {
-	api(libs.ktor.core);
+	api(libs.ktor.core)
+	implementation("io.ktor:ktor-server-host-common:3.1.2");
 	
 	compileOnly(libs.ktor.plugin.statusPages);
 	compileOnly(libs.ktor.plugin.websockets);

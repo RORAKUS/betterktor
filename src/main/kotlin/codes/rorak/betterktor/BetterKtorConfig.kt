@@ -7,6 +7,7 @@ import codes.rorak.betterktor.api.PageReturn
 import codes.rorak.betterktor.api.TemplateReturn
 import codes.rorak.betterktor.internal.other.Util
 import codes.rorak.betterktor.internal.other.debug
+import codes.rorak.betterktor.internal.other.log
 import codes.rorak.betterktor.util.Casing
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -18,6 +19,7 @@ import io.ktor.server.response.*
 import io.ktor.server.thymeleaf.*
 import io.ktor.server.velocity.*
 import kotlinx.coroutines.sync.Mutex
+import kotlin.reflect.KClass
 
 /**
  * The config class for the BetterKtor plugin
@@ -53,14 +55,6 @@ class BetterKtorConfig {
 			field = v;
 			BetterKtor.defaultPagesDirectory = field;
 		};
-	
-	/**
-	 * A name for the default directory where to search for template pages in
-	 * [TemplateReturn]
-	 *
-	 * Default: `"pages"`
-	 */
-	var defaultTemplatesDirectory = "templates";
 	
 	/**
 	 * A name for the default authentication to use in [Auth] annotations
@@ -130,8 +124,21 @@ class BetterKtorConfig {
 	 */
 	var strict = false;
 	
+	/**
+	 * A list of custom receiver functions for parameter receiving
+	 */
+	var customReceivers: MutableMap<KClass<*>, suspend ApplicationCall.() -> Any?> =
+		mutableMapOf();
+	
 	
 	internal val naming = BetterKtorNamingConfig();
+	
+	/**
+	 * Add a new custom receiver function for parameter receiving
+	 */
+	inline fun <reified T: Any> customReceive(noinline handleFunction: suspend ApplicationCall.() -> Any?) {
+		customReceivers[T::class] = handleFunction;
+	}
 	
 	/**
 	 * Allows you to set names for name recognized endpoints or injections
@@ -194,7 +201,7 @@ class BetterKtorConfig {
 			return;
 		};
 		
-		debug("No template engine found!");
+		log.warn("No template engine found!");
 	}
 	
 	private fun Map<String, Any?>.nonNull() = map {

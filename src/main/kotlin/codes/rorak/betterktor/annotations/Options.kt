@@ -97,6 +97,13 @@ enum class AuthOption {
 	 * Used to cancel whole-class authentication (a whole class annotated with [Auth])
 	 */
 	NONE;
+	
+	internal val strategy
+		get() = when (this) {
+			REQUIRED -> AuthenticationStrategy.Required
+			OPTIONAL -> AuthenticationStrategy.Optional
+			NONE -> throw IllegalStateException();
+		};
 }
 
 /**

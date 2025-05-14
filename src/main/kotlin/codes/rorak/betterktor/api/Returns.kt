@@ -1,6 +1,8 @@
 package codes.rorak.betterktor.api
 
 import codes.rorak.betterktor.BetterKtorConfig
+import codes.rorak.betterktor.internal.resolver.BetterKtorCache
+import codes.rorak.betterktor.util.BetterKtorRuntimeError
 import io.ktor.http.*
 import io.ktor.http.content.*
 import io.ktor.server.application.*
@@ -13,7 +15,9 @@ import java.io.File
  * implement this interface in your serializable data classes for
  * more flexibility.
  */
-interface CallReturn;
+abstract class CallReturn {
+	internal abstract suspend fun respond(call: ApplicationCall, cache: BetterKtorCache);
+};
 
 /**
  * An HTML text response.
@@ -24,7 +28,11 @@ interface CallReturn;
 data class HTMLReturn(
 	val text: String,
 	val statusCode: HttpStatusCode = HttpStatusCode.OK
-): CallReturn;
+): CallReturn() {
+	override suspend fun respond(call: ApplicationCall, cache: BetterKtorCache) {
+		call.respondText(text, ContentType.Text.Html, statusCode);
+	}
+};
 
 /**
  * An HTML page response. The page is found in the resources directory inside
@@ -39,25 +47,31 @@ data class PageReturn(
 	val name: String,
 	val directory: String? = null,
 	val statusCode: HttpStatusCode = HttpStatusCode.OK
-): CallReturn;
+): CallReturn() {
+	override suspend fun respond(call: ApplicationCall, cache: BetterKtorCache) {
+		call.respondPage(name, directory ?: cache.config.defaultPagesDirectory, statusCode);
+	}
+};
 
 /**
- * A template page response. The page is found in the directory inside
- * a folder specified by [BetterKtorConfig.defaultTemplatesDirectory] or by the
- * [directory] parameter. It uses the [BetterKtorConfig.templateRespondMethod] to
+ * A template page response. It uses the [BetterKtorConfig.templateRespondMethod] to
  * respond.
  *
  * @param name The path to the page including its extension
- * @param directory The optional directory name overriding the default one
  * @param parameters The parameters for the template
  * @param statusCode The response HTTP status code
  */
 data class TemplateReturn(
 	val name: String,
 	val parameters: List<Pair<String, Any?>>,
-	val directory: String? = null,
 	val statusCode: HttpStatusCode = HttpStatusCode.OK
-): CallReturn;
+): CallReturn() {
+	override suspend fun respond(call: ApplicationCall, cache: BetterKtorCache) {
+		// respond with a template, if the templateRespondMethod was not set, throw an error
+		cache.config.templateRespondMethod?.invoke(call, name, parameters.toMap(), statusCode)
+			?: BetterKtorRuntimeError("Cannot use TemplateReturn - a template engine was not set up!");
+	}
+};
 
 /**
  * A normal status code response. The client receives an empty response with
@@ -67,7 +81,11 @@ data class TemplateReturn(
  */
 data class StatusReturn(
 	val statusCode: HttpStatusCode
-): CallReturn;
+): CallReturn() {
+	override suspend fun respond(call: ApplicationCall, cache: BetterKtorCache) {
+		call.respond(statusCode, "");
+	}
+};
 
 /**
  * A file response using the [ApplicationCall.respondFile] method.
@@ -78,7 +96,11 @@ data class StatusReturn(
 data class FileReturn(
 	val file: File,
 	val configuration: OutgoingContent.() -> Unit = {}
-): CallReturn;
+): CallReturn() {
+	override suspend fun respond(call: ApplicationCall, cache: BetterKtorCache) {
+		call.respondFile(file, configuration);
+	}
+};
 
 /**
  * Redirects the response to the specified [url] using [ApplicationCall.respondRedirect].
@@ -89,7 +111,11 @@ data class FileReturn(
 data class RedirectReturn(
 	val url: String,
 	val permanent: Boolean = false
-): CallReturn;
+): CallReturn() {
+	override suspend fun respond(call: ApplicationCall, cache: BetterKtorCache) {
+		call.respondRedirect(url, permanent);
+	}
+};
 
 /**
  * A template page response. The page is found in the directory inside
