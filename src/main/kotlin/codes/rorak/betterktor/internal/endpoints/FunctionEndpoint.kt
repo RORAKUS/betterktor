@@ -5,7 +5,6 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
-import io.ktor.websocket.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.isSubclassOf
@@ -34,7 +33,7 @@ internal abstract class FunctionEndpoint(cache: BetterKtorCache, val function: K
 				type in cache.config.customReceivers -> ParameterGetter(cache.config.customReceivers[type]!!);
 				// call or session properties
 				type == ApplicationCall::class -> ParameterGetter({ this }, { call }, { call });
-				type == DefaultWebSocketSession::class -> ParameterGetter(wsGetter = { this });
+				type == DefaultWebSocketServerSession::class -> ParameterGetter(wsGetter = { this });
 				type == ServerSSESession::class -> ParameterGetter(sseGetter = { this });
 				type.isSubclassOf(Throwable::class) -> ParameterGetter(isError = true);
 				// a receiver

@@ -13,6 +13,7 @@ import io.ktor.util.reflect.*
 import kotlinx.coroutines.sync.Mutex
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.full.isSubclassOf
 
 internal class NormalEndpoint(cache: BetterKtorCache, f: KFunction<*>):
 	FunctionEndpoint(cache, f) {
@@ -44,9 +45,10 @@ internal class NormalEndpoint(cache: BetterKtorCache, f: KFunction<*>):
 						if (call.isHandled) return@handle;
 						
 						// if the return value type does not match the set type, throw
-						if (returnValue == null || returnValue::class != returnType) throw IllegalStateException();
+						if (returnValue == null || !returnValue::class.isSubclassOf(returnType))
+							throw IllegalStateException();
 						
-						// respond according to the return value
+						// respond, according to the return value
 						if (returnValue is CallReturn) returnValue.respond(call, cache);
 						else call.respond(returnValue, TypeInfo(returnType));
 					};

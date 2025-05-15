@@ -29,11 +29,3 @@ val BetterKtor = createApplicationPlugin("BetterKtor", ::BetterKtorConfig) {
 	
 	debug("Successfully installed!");
 };
-
-interface Test {
-	fun a();
-}
-
-fun main() {
-	println(Test::a.isOpen);
-}

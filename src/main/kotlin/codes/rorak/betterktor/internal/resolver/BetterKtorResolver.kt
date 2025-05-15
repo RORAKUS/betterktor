@@ -7,6 +7,8 @@ import codes.rorak.betterktor.internal.other.EndpointType
 import codes.rorak.betterktor.internal.other.debug
 import codes.rorak.betterktor.internal.other.dotJoin
 import codes.rorak.betterktor.internal.other.log
+import io.ktor.server.application.*
+import io.ktor.server.plugins.statuspages.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.declaredMemberFunctions
@@ -114,6 +116,11 @@ internal class BetterKtorResolver(val cache: BetterKtorCache) {
 		debug("Registering endpoints...");
 		
 		cache.endpoints.forEach(BaseEndpoint::register);
+		
+		// install and configure status pages
+		cache.application.install(StatusPages) {
+			cache.statusPagesErrors.forEach { it() };
+		};
 		
 		debug("Endpoints successfully registered!");
 	}

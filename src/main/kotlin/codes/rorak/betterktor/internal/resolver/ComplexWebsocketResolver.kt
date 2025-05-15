@@ -106,7 +106,7 @@ internal class ComplexWebsocketResolver(
 		val type = resolveMethodType(f) ?: return@forEach;
 		
 		// there can be only one onConnect & onClose method
-		if (type == MethodType.CONNECT && endpoint.onConect != null)
+		if (type == MethodType.CONNECT && endpoint.onConnect != null)
 			throw BetterKtorError("There can be only one connect handler for a complex websocket!", cache);
 		if (type == MethodType.CLOSE && endpoint.onClose != null)
 			throw BetterKtorError("There can be only one close handler for a complex websocket!", cache);
@@ -141,7 +141,7 @@ internal class ComplexWebsocketResolver(
 		
 		// set the method variable in the endpoint
 		when (type) {
-			MethodType.CONNECT -> endpoint.onConect = functionObject;
+			MethodType.CONNECT -> endpoint.onConnect = functionObject;
 			MethodType.CLOSE -> endpoint.onClose = functionObject;
 			MethodType.ERROR -> endpoint.onError += functionObject;
 			MethodType.MESSAGE -> endpoint.onMessage += functionObject;

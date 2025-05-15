@@ -24,7 +24,7 @@ import kotlin.reflect.full.isSubclassOf
 
 internal class ComplexWebsocketEndpoint(cache: BetterKtorCache, val clazz: KClass<*>, val outerClass: EndpointClass?):
 	BaseEndpoint(cache) {
-	var onConect: FunctionObject? = null;
+	var onConnect: FunctionObject? = null;
 	var onClose: FunctionObject? = null;
 	
 	val onError = mutableListOf<FunctionObject>();
@@ -66,7 +66,7 @@ internal class ComplexWebsocketEndpoint(cache: BetterKtorCache, val clazz: KClas
 		// start handler, stop handler, message receive handler, error handler + mutexed
 		
 		// inform the connect handler
-		onConect?.let { f ->
+		onConnect?.let { f ->
 			// get the parameters
 			val parameters = f.parameterTypes.map { if (it == ApplicationCall::class) session.call else session };
 			
@@ -166,7 +166,8 @@ internal class ComplexWebsocketEndpoint(cache: BetterKtorCache, val clazz: KClas
 				
 				// get the message send handler for the correct type
 				// use flowProperty.returnType.classifier instead of the parameter 'type', because a superclass could have been used
-				val messageSendHandler = onMessageSend.find { it.distinctType == flowProperty.returnType.classifier };
+				val messageSendHandler =
+					onMessageSend.find { it.distinctType == flowProperty.returnType.arguments.first().type?.classifier };
 				
 				// save the data in a mutable property for a possible edit
 				var data = data;
@@ -183,9 +184,8 @@ internal class ComplexWebsocketEndpoint(cache: BetterKtorCache, val clazz: KClas
 					val newValue = CommonRegister.optionalMutex(sendHandlerMutex) {
 						// call the handler, get the new value return
 						// if the value is null, skip the sending completely
-						messageSendHandler.function.suspendCall(instance, parameters)
-							?: return@optionalMutex;
-					};
+						messageSendHandler.function.suspendCall(instance, parameters);
+					} ?: return@optionalMutex;
 					
 					// edit the data
 					data = newValue;
@@ -228,7 +228,7 @@ internal class ComplexWebsocketEndpoint(cache: BetterKtorCache, val clazz: KClas
 		=== Complex websocket endpoint '${clazz.simpleName}' ===
 		${super.toString()}
 		Mutex id: ${BetterKtor.mutexMap.getKey(mutex)}
-		On connect handler: $onConect
+		On connect handler: $onConnect
 		On close handler: $onClose
 		On error handlers: ${onError.joinToString()}
 		On message handlers: ${onMessage.joinToString()}

@@ -17,7 +17,6 @@ repositories {
 
 dependencies {
 	api(libs.ktor.core)
-	implementation("io.ktor:ktor-server-host-common:3.1.2");
 	
 	compileOnly(libs.ktor.plugin.statusPages);
 	compileOnly(libs.ktor.plugin.websockets);
@@ -40,6 +39,7 @@ dependencies {
 	testImplementation(libs.ktor.plugin.statusPages);
 	testImplementation(libs.ktor.plugin.websockets);
 	testImplementation(libs.ktor.plugin.auth);
+	testImplementation(libs.ktor.plugin.template.jte);
 };
 
 tasks.test {

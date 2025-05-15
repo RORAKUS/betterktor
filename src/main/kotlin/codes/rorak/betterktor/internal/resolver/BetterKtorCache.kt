@@ -5,6 +5,7 @@ import codes.rorak.betterktor.internal.endpoints.BaseEndpoint
 import codes.rorak.betterktor.internal.other.declaringClass
 import codes.rorak.betterktor.internal.other.isTopLevel
 import io.ktor.server.application.*
+import io.ktor.server.plugins.statuspages.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KProperty
@@ -17,6 +18,13 @@ internal class BetterKtorCache(val config: BetterKtorConfig, val application: Ap
 	val endpoints = mutableListOf<BaseEndpoint>();
 	
 	val cwInstances = mutableMapOf<KClass<*>, MutableList<Any>>();
+	
+	val statusPagesErrors = mutableListOf<StatusPagesConfig.() -> Unit>();
+	
+	// adds a status pages config
+	fun statusPage(config: StatusPagesConfig.() -> Unit) {
+		statusPagesErrors += config;
+	}
 	
 	// returns the error message information with currently edited class/method
 	fun errorMeta(): String {

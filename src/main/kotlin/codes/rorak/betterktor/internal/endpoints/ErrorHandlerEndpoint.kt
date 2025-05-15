@@ -3,8 +3,6 @@ package codes.rorak.betterktor.internal.endpoints
 import codes.rorak.betterktor.internal.other.dropLines
 import codes.rorak.betterktor.internal.other.suspendCall
 import codes.rorak.betterktor.internal.resolver.BetterKtorCache
-import io.ktor.server.application.*
-import io.ktor.server.plugins.statuspages.*
 import kotlinx.coroutines.sync.Mutex
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -15,7 +13,7 @@ internal class ErrorHandlerEndpoint(cache: BetterKtorCache, f: KFunction<*>): //
 	var mutex: Mutex? = null;
 	
 	override fun register() {
-		cache.application.install(StatusPages) {
+		cache.statusPage {
 			exception<Throwable> { call, cause ->
 				// if the type is not correct, return
 				if (cause::class != errorType) return@exception;

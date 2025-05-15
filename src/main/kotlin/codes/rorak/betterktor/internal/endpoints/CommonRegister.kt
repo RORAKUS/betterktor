@@ -30,7 +30,7 @@ internal object CommonRegister {
 			// handle special parameter case -> principal auth id
 			if (option.first == InjectOption.PRINCIPAL) parameter = parameter ?: cache.config.defaultAuthId;
 			
-			// get the value -> call the getter accoring to the type
+			// get the value -> call the getter according to the type
 			val value = when (sessionOrCall) {
 				is ApplicationCall -> option.first.getter(sessionOrCall, parameter to datatype);
 				is DefaultWebSocketServerSession -> option.first.wsGetter(sessionOrCall, parameter to datatype);
@@ -57,5 +57,5 @@ internal object CommonRegister {
 	
 	// if the mutex is defined, it uses it. If not, it calls the function normally
 	suspend fun <T> optionalMutex(mutex: Mutex?, block: suspend () -> T): T =
-		if (mutex != null) mutex.withLock { block(); } else block();
+		if (mutex != null) mutex.withLock { block() } else block();
 }
