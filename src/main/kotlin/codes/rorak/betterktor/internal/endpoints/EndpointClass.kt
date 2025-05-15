@@ -3,7 +3,7 @@ package codes.rorak.betterktor.internal.endpoints
 import codes.rorak.betterktor.annotations.AuthOption
 import codes.rorak.betterktor.api.BetterKtor
 import codes.rorak.betterktor.internal.other.EndpointType
-import codes.rorak.betterktor.internal.other.MutableInjectedProperties
+import codes.rorak.betterktor.internal.other.InjectedProperties
 import codes.rorak.betterktor.internal.other.Path
 import codes.rorak.betterktor.internal.other.getKey
 import codes.rorak.betterktor.internal.other.string
@@ -17,13 +17,13 @@ internal class EndpointClass(val cache: BetterKtorCache, val clazz: KClass<*>) {
 	lateinit var defaultHttpMethod: HttpMethod;
 	lateinit var defaultType: EndpointType;
 	lateinit var path: Path;
+	lateinit var injectedProperties: InjectedProperties;
 	lateinit var casing: CasingMethod;
 	
 	var auth: Pair<String, AuthOption>? = null;
 	var mutex: Mutex? = null;
-	var ignored: Boolean = true;
 	
-	val injectedProperties: MutableInjectedProperties = mutableMapOf();
+	var ignored: Boolean = true;
 	
 	override fun toString() = """
 		=== Endpoint class '${clazz.simpleName!!}' ===

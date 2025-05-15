@@ -16,7 +16,7 @@ internal class BetterKtorCache(val config: BetterKtorConfig, val application: Ap
 	
 	val endpoints = mutableListOf<BaseEndpoint>();
 	
-	val cwInstances = mutableMapOf<KClass<*>, List<Any>>();
+	val cwInstances = mutableMapOf<KClass<*>, MutableList<Any>>();
 	
 	// returns the error message information with currently edited class/method
 	fun errorMeta(): String {

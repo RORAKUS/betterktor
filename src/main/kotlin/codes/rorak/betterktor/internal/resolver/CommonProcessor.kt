@@ -1,21 +1,20 @@
 package codes.rorak.betterktor.internal.resolver
 
-import codes.rorak.betterktor.annotations.Auth
-import codes.rorak.betterktor.annotations.AuthOption
-import codes.rorak.betterktor.annotations.Casing
-import codes.rorak.betterktor.annotations.CasingOption
-import codes.rorak.betterktor.annotations.NoMutex
-import codes.rorak.betterktor.annotations.RelativeTo
+import codes.rorak.betterktor.annotations.*
 import codes.rorak.betterktor.api.BetterKtor
 import codes.rorak.betterktor.internal.endpoints.EndpointClass
+import codes.rorak.betterktor.internal.other.InjectedProperties
 import codes.rorak.betterktor.internal.other.Path
 import codes.rorak.betterktor.util.BetterKtorError
 import codes.rorak.betterktor.util.CasingMethod
 import kotlinx.coroutines.sync.Mutex
 import kotlin.reflect.KAnnotatedElement
+import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.memberProperties
 
 internal object CommonProcessor {
 	// processes a path of an element
@@ -108,4 +107,44 @@ internal object CommonProcessor {
 		// return the mutex value
 		return mutex;
 	}
+	
+	// process injected properties
+	fun injectedPropertiesProcessor(
+		clazz: KClass<*>,
+		cache: BetterKtorCache
+	): InjectedProperties = clazz.memberProperties.mapNotNull { p ->
+		cache.current(p);
+		
+		// get the inject annotation
+		var injectAnnotation = p.findAnnotation<Inject>();
+		
+		// check for the inject call annotation
+		if (p.hasAnnotation<InjectCall>()) {
+			if (injectAnnotation != null) throw BetterKtorError(
+				"A property cannot have the Inject annotation and the InjectCall annotation at the same time!", cache
+			);
+			// set the inject annotation
+			injectAnnotation = Inject(InjectOption.CALL);
+		}
+		
+		// skip normal properties
+		if (injectAnnotation == null) return@mapNotNull null;
+		
+		// check if the property is mutable
+		if (p !is KMutableProperty1<*, *>) throw BetterKtorError("An injected property must be mutable!", cache);
+		
+		// check the parameter -> cannot be empty if required
+		if (injectAnnotation.parameter.isEmpty() && injectAnnotation.option.parameter == InjectOption.Parameter.REQUIRED)
+			throw BetterKtorError("Parameter for the option '${injectAnnotation.option.name}' is required!", cache);
+		
+		// check the property type
+		val propertyType = p.returnType.classifier as? KClass<*>;
+		if (propertyType !in injectAnnotation.option.allowedTypes)
+			throw BetterKtorError(
+				"The type '${p.returnType}' for the option '${injectAnnotation.option.name}' is not allowed!", cache
+			);
+		
+		// return the pair
+		return@mapNotNull p to (injectAnnotation.option to injectAnnotation.parameter);
+	}.toMap();
 }

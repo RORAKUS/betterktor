@@ -32,7 +32,7 @@ internal class EndpointResolver(val cache: BetterKtorCache, val function: KFunct
 	- Type (Normal, WS, SSE...)
 	- Path
 	- Auth id and option
-	- Parameter types (get back to it - maybe change type to some method type instead of KClass<*>)
+	- Parameter types
 	- Class instance and injected properties
 	* For a normal endpoint:
 		- Mutex

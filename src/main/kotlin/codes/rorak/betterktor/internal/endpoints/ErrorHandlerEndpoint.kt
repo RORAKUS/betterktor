@@ -1,15 +1,15 @@
 package codes.rorak.betterktor.internal.endpoints
 
 import codes.rorak.betterktor.internal.other.dropLines
+import codes.rorak.betterktor.internal.other.suspendCall
 import codes.rorak.betterktor.internal.resolver.BetterKtorCache
 import io.ktor.server.application.*
 import io.ktor.server.plugins.statuspages.*
 import kotlinx.coroutines.sync.Mutex
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.callSuspend
 
-internal class ErrorHandlerEndpoint(cache: BetterKtorCache, f: KFunction<*>):
+internal class ErrorHandlerEndpoint(cache: BetterKtorCache, f: KFunction<*>): // fixme error inheritance
 	FunctionEndpoint(cache, f) {
 	lateinit var errorType: KClass<*>;
 	var mutex: Mutex? = null;
@@ -28,11 +28,9 @@ internal class ErrorHandlerEndpoint(cache: BetterKtorCache, f: KFunction<*>):
 					if (it.value.isError) cause
 					else it.value.getter!!.invoke(call)
 				}.toMutableList();
-				// if the instance is not null, add it to the start of the parameters
-				if (instance != null) parameters.add(0, instance);
 				
 				// if mutex is required, use it and call the provided function
-				CommonRegister.optionalMutex(mutex) { function.callSuspend(parameters) };
+				CommonRegister.optionalMutex(mutex) { function.suspendCall(instance, parameters) };
 			};
 		};
 	}

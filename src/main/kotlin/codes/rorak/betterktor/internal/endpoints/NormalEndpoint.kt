@@ -4,6 +4,7 @@ import codes.rorak.betterktor.api.BetterKtor
 import codes.rorak.betterktor.api.CallReturn
 import codes.rorak.betterktor.internal.other.dropLines
 import codes.rorak.betterktor.internal.other.getKey
+import codes.rorak.betterktor.internal.other.suspendCall
 import codes.rorak.betterktor.internal.resolver.BetterKtorCache
 import io.ktor.http.*
 import io.ktor.server.application.*
@@ -12,7 +13,6 @@ import io.ktor.util.reflect.*
 import kotlinx.coroutines.sync.Mutex
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
-import kotlin.reflect.full.callSuspend
 
 internal class NormalEndpoint(cache: BetterKtorCache, f: KFunction<*>):
 	FunctionEndpoint(cache, f) {
@@ -35,11 +35,10 @@ internal class NormalEndpoint(cache: BetterKtorCache, f: KFunction<*>):
 						val instance = classInfo?.let { CommonRegister.handleInstance(it, call, cache) };
 						// receive the parameters
 						val parameters = parameterTypes.map { it.value.getter!!.invoke(call) }.toMutableList();
-						// if the instance is not null, add it to the start of the parameters
-						if (instance != null) parameters.add(0, instance);
 						
 						// if mutex is required, use it. Call the provided function, get the return value
-						val returnValue = CommonRegister.optionalMutex(mutex) { function.callSuspend(parameters) };
+						val returnValue =
+							CommonRegister.optionalMutex(mutex) { function.suspendCall(instance, parameters) };
 						
 						// if the call was already answered, return
 						if (call.isHandled) return@handle;

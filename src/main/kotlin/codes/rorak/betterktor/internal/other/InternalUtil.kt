@@ -10,6 +10,7 @@ import kotlin.reflect.KAnnotatedElement
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
+import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.declaredMemberFunctions
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.valueParameters
@@ -80,6 +81,15 @@ internal fun <T> MutableList<T>.removeFirst(predicate: (T) -> Boolean): Boolean 
 private val List<KParameter>.info get() = map { it.type to it.isVararg }
 private fun KFunction<*>.isSimilarTo(other: KFunction<*>) =
 	name == other.name && valueParameters.info == other.valueParameters.info && returnType == other.returnType;
+
+// calls the function suspended with an instance and parameters in a list
+internal suspend fun <T> KFunction<T>.suspendCall(instance: Any?, params: List<Any?>): T {
+	// add the instance to the list
+	val paramList = params.toMutableList();
+	if (instance != null) paramList.add(0, instance);
+	// call
+	return callSuspend(*paramList.toTypedArray());
+}
 
 internal val KFunction<*>.isTopLevel get() = javaMethod?.declaringClass?.getAnnotation(Metadata::class.java)?.kind == 2;
 internal val KAnnotatedElement.annotationClasses get() = annotations.map { it.annotationClass };

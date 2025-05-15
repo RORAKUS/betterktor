@@ -48,6 +48,7 @@ internal class ComplexWebsocketResolver(
 		processPath();
 		endpoint.auth = CommonProcessor.authProcessor(clazz, outerClass, cache);
 		endpoint.mutex = CommonProcessor.mutexProcessor(clazz, outerClass?.mutex, cache);
+		processInjectedProperties();
 		processMethods();
 		processProperties();
 		
@@ -81,6 +82,18 @@ internal class ComplexWebsocketResolver(
 		
 		// set the endpoint path variable
 		endpoint.path = path;
+	}
+	
+	private fun processInjectedProperties() {
+		// process them with the CommonProcessor
+		val injectedProperties = CommonProcessor.injectedPropertiesProcessor(clazz, cache);
+		
+		// a fix so the next statement doesn't throw an error with invalid metadata
+		cache.current(clazz);
+		
+		// check if only websocket allowed properties are present
+		if (injectedProperties.any { InjectOption.Type.WEBSOCKET !in it.value.first.types })
+			throw BetterKtorError("You can use only injects for websocket types in complex websockets!", cache);
 	}
 	
 	private fun processMethods() = clazz.declaredMemberFunctions.forEach { f ->
@@ -165,8 +178,12 @@ internal class ComplexWebsocketResolver(
 			?: throw BetterKtorError("Invalid type!", cache);
 		if (type != MutableSharedFlow::class) throw BetterKtorError("The type must be 'MutableSharedFlow'!", cache);
 		
+		// resolve and check the generic parameter of the type
+		val genericType = prop.returnType.arguments[0].type?.classifier as? KClass<*>
+			?: throw BetterKtorError("Invalid generic type!", cache);
+		
 		// set the flow object
-		endpoint.flowObjects += prop as KMutableProperty1<*, MutableSharedFlow<*>>;
+		endpoint.flowObjects[genericType] = prop as KMutableProperty1<*, MutableSharedFlow<*>>;
 	};
 	
 	private fun resolveMethodType(method: KFunction<*>): MethodType? {

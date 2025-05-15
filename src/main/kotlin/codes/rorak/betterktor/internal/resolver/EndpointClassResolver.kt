@@ -12,12 +12,9 @@ import codes.rorak.betterktor.internal.other.isTypeAnnotation
 import codes.rorak.betterktor.util.BetterKtorError
 import io.ktor.http.*
 import kotlin.reflect.KClass
-import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.full.allSuperclasses
-import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
-import kotlin.reflect.full.memberProperties
 
 internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KClass<*>, val outerClass: EndpointClass?) {
 	// the endpoint
@@ -38,7 +35,7 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		processPath();
 		endpoint.auth = CommonProcessor.authProcessor(clazz, outerClass, cache);
 		endpoint.mutex = CommonProcessor.mutexProcessor(clazz, outerClass?.mutex, cache);
-		processInjectedProperties();
+		endpoint.injectedProperties = CommonProcessor.injectedPropertiesProcessor(clazz, cache);
 		
 		return@runCatching endpoint;
 	}.getOrElse {
@@ -104,42 +101,6 @@ internal class EndpointClassResolver(val cache: BetterKtorCache, val clazz: KCla
 		endpoint.path = path;
 		endpoint.casing = casing;
 	}
-	
-	private fun processInjectedProperties() = clazz.memberProperties.forEach { p ->
-		cache.current(p);
-		
-		// get the inject annotation
-		var injectAnnotation = p.findAnnotation<Inject>();
-		
-		// check for the inject call annotation
-		if (p.hasAnnotation<InjectCall>()) {
-			if (injectAnnotation != null) throw BetterKtorError(
-				"A property cannot have the Inject annotation and the InjectCall annotation at the same time!", cache
-			);
-			// set the inject annotation
-			injectAnnotation = Inject(InjectOption.CALL);
-		}
-		
-		// skip normal properties
-		if (injectAnnotation == null) return@forEach;
-		
-		// check if the property is mutable
-		if (p !is KMutableProperty1<*, *>) throw BetterKtorError("An injected property must be mutable!", cache);
-		
-		// check the parameter -> cannot be empty if required
-		if (injectAnnotation.parameter.isEmpty() && injectAnnotation.option.parameter == InjectOption.Parameter.REQUIRED)
-			throw BetterKtorError("Parameter for the option '${injectAnnotation.option.name}' is required!", cache);
-		
-		// check the property type
-		val propertyType = p.returnType.classifier as? KClass<*>;
-		if (propertyType !in injectAnnotation.option.allowedTypes)
-			throw BetterKtorError(
-				"The type '${p.returnType}' for the option '${injectAnnotation.option.name}' is not allowed!", cache
-			);
-		
-		// add it to the list
-		endpoint.injectedProperties[p] = injectAnnotation.option to injectAnnotation.parameter;
-	};
 	
 	private fun processAnnotations() = clazz.annotations.forEach { a ->
 		// an endpoint cannot have multiple type annotations

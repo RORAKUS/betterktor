@@ -5,6 +5,8 @@ import codes.rorak.betterktor.internal.resolver.BetterKtorCache
 import codes.rorak.betterktor.internal.resolver.BetterKtorResolver
 import io.ktor.server.application.*
 
+// todo advanced analytics system
+
 /**
  * Main plugin
  *

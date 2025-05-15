@@ -5,7 +5,6 @@ import codes.rorak.betterktor.annotations.Inject
 import codes.rorak.betterktor.annotations.InjectCall
 import codes.rorak.betterktor.annotations.InjectOption
 import codes.rorak.betterktor.annotations.Mutex
-import codes.rorak.betterktor.internal.endpoints.ComplexWebsocketEndpoint
 import codes.rorak.betterktor.internal.resolver.BetterKtorCache
 import io.ktor.server.application.*
 import io.ktor.server.sse.*
@@ -222,15 +221,6 @@ interface ErrorHandler<ErrorType: Throwable>: BetterKtorEndpoint {
 @Suppress("UNCHECKED_CAST")
 abstract class ComplexWebsocket<SelfType: ComplexWebsocket<SelfType>>: BetterKtorEndpoint {
 	// Internal variables
-	
-	// the handlers called when the websocket is destroyed during the sending phase
-	internal val destroyHandlers: List<() -> Unit> = mutableListOf();
-	
-	// the information about the endpoint
-	internal lateinit var endpointInfo: ComplexWebsocketEndpoint;
-	
-	// needed, because isInitialized cannot be called in inline functions
-	internal val isInitialized get() = ::endpointInfo.isInitialized;
 	
 	// the current app cache
 	internal lateinit var cache: BetterKtorCache;
